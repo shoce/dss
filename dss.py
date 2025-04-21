@@ -1,45 +1,76 @@
 import os
 import re
 import json
+import time
+from datetime import datetime, timedelta
+import asyncio
+
 from aiohttp import web
+from collections import defaultdict
 
 import yt_dlp
 
 DOWNLOAD_DIR = os.path.abspath("downloads/")
+os.makedirs(DOWNLOAD_DIR, exist_ok=True)
+
+download_tasks = {}
+download_start_times = {}
+download_locks = defaultdict(asyncio.Lock)
+
+def format_duration(seconds):
+    mins, secs = divmod(int(seconds), 60)
+    return f"{mins}m{secs}s"
 
 async def handle_post(request):
     try:
         data = await request.json()
     except json.JSONDecodeError:
-        return response_json("Invalid JSON", None, None)
+        return response_json("Invalid JSON", None, None, None)
 
     url = data.get("url")
     audio_q = data.get("audio_quality")
     video_q = data.get("video_quality")
 
     if not url:
-        return response_json('Missing "url"', None, None)
+        return response_json('Missing "url"', None, None, None)
 
     if not audio_q and not video_q:
-        return response_json('Either "audio_quality" or "video_quality" must be specified', None, None)
+        return response_json('Either "audio_quality" or "video_quality" must be specified', None, None, None)
 
     try:
         service = extract_service_name(url)
         video_id = extract_video_id(url)
         base = sanitize_filename(f"{service}..{video_id}..")
-        audio_file = base+"m4a" if audio_q else None
-        video_file = base+"mp4" if video_q else None
+        audio_file = base + "m4a" if audio_q else None
+        video_file = base + "mp4" if video_q else None
 
-        if audio_q and not os.path.isfile(os.path.join(DOWNLOAD_DIR, audio_file)):
-            download_audio(url, base, audio_q)
+        now = time.time()
+        download_key = f"{service}..{video_id} a={audio_q} v={video_q}"
+        age = None
 
-        if video_q and not os.path.isfile(os.path.join(DOWNLOAD_DIR, video_file)):
-            download_video(url, base, video_q)
+        if download_key in download_start_times:
+            age = now - download_start_times[download_key]
 
-        return response_json("", audio_file, video_file)
+        # Launch background task if not running
+        if download_key not in download_tasks:
+            download_start_times[download_key] = now
+            download_tasks[download_key] = asyncio.create_task(
+                do_download(download_key, url, base, audio_q, video_q)
+            )
+            age = 0
+
+        return response_json("", audio_file, video_file, format_duration(age) if age is not None else None)
 
     except Exception as e:
-        return response_json(str(e), None, None)
+        return response_json(str(e), None, None, None)
+
+async def do_download(key, url, base, audio_q, video_q):
+    async with download_locks[key]:
+        if audio_q:
+            await asyncio.to_thread(download_audio, url, base, audio_q)
+        if video_q:
+            await asyncio.to_thread(download_video, url, base, video_q)
+        del download_tasks[key]
 
 async def handle_file(request):
     filename = request.match_info["filename"]
@@ -52,7 +83,10 @@ async def handle_file(request):
     if not os.path.isfile(path):
         print(f"DEBUG path=={path} file does not exist")
         return web.Response(status=404, text="File not found")
-    ctype = "audio/mp4" if filename.endswith(".m4a") else "video/mp4"
+    if filename.endswith(".m4a"):
+        ctype = "audio/mp4"
+    else:
+        ctype = "video/mp4"
     return web.FileResponse(path=path, headers={"Content-Type": ctype})
 
 def extract_service_name(url):
@@ -69,7 +103,10 @@ def extract_video_id(url):
         return video_id
 
 def download_audio(url, base, quality):
-    format_str = "worstaudio[ext=m4a]/worstaudio" if quality == "min" else "bestaudio[ext=m4a]/bestaudio"
+    if quality == "min":
+        format_str = "worstaudio[ext=m4a]/worstaudio"
+    else:
+        format_str = "bestaudio[ext=m4a]/bestaudio"
     opts = {
         "format": format_str,
         "outtmpl": os.path.join(DOWNLOAD_DIR, base),
@@ -84,7 +121,10 @@ def download_audio(url, base, quality):
         ydl.download([url])
 
 def download_video(url, base, quality):
-    format_str = "worstvideo[ext=mp4]+worstaudio/worst" if quality == "min" else "bestvideo[ext=mp4]+bestaudio/best"
+    if quality == "min":
+        format_str = "worstvideo[ext=mp4]+worstaudio/worst"
+    else:
+        format_str = "bestvideo[ext=mp4]+bestaudio/best"
     opts = {
         "format": format_str,
         "outtmpl": os.path.join(DOWNLOAD_DIR, base),
@@ -96,12 +136,17 @@ def download_video(url, base, quality):
 
 def sanitize_filename(name):
     name = re.sub(r"[^a-zA-Z0-9.]", ".", name)
-    name = re.sub(r"\\.+", ".", name)
+    name = re.sub(r"\.+", ".", name)
     return name
 
-def response_json(err, audio_file, video_file):
+def response_json(err, audio_file, video_file, age):
     return web.Response(
-        text=json.dumps({ "error": err, "audio": audio_file, "video": video_file }, ensure_ascii=False) + "\n",
+        text=json.dumps({
+            "error": err,
+            "audio": audio_file,
+            "video": video_file,
+            "age": age
+        }) + "\n",
         content_type="application/json"
     )
 
