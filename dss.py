@@ -2,6 +2,7 @@ import os
 import re
 import json
 from aiohttp import web
+
 import yt_dlp
 
 DOWNLOAD_DIR = os.path.abspath("downloads/")
@@ -38,10 +39,14 @@ async def handle_post(request):
 
 async def handle_file(request):
     filename = request.match_info["filename"]
+    print(f"DEBUG filename=={filename}")
     if not re.match(r"^[a-zA-Z0-9.]+$", filename):
+        print(f"DEBUG filename=={filename} not matching regexp")
         return web.Response(status=400, text="Invalid filename")
     path = os.path.join(DOWNLOAD_DIR, filename)
+    print(f"DEBUG path=={path}")
     if not os.path.isfile(path):
+        print(f"DEBUG path=={path} file does not exist")
         return web.Response(status=404, text="File not found")
     ctype = "audio/mp4" if filename.endswith(".m4a") else "video/mp4"
     return web.FileResponse(path=path, headers={"Content-Type": ctype})
