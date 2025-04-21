@@ -59,7 +59,18 @@ async def handle_post(request):
             )
             age = 0
 
-        return response_json("", audio_file, video_file, format_duration(age) if age is not None else None)
+        audio_path = os.path.join(DOWNLOAD_DIR, audio_file) if audio_file else None
+        audio_ready = os.path.isfile(audio_path) if audio_path else False
+
+        video_path = os.path.join(DOWNLOAD_DIR, video_file) if video_file else None
+        video_ready = os.path.isfile(video_path) if video_path else False
+
+        return response_json(
+            "",
+            audio_file if audio_ready else None,
+            video_file if video_ready else None,
+            format_duration(age) if age is not None else None
+        )
 
     except Exception as e:
         return response_json(str(e), None, None, None)
