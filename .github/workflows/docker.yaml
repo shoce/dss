@@ -22,7 +22,6 @@ env:
 
 jobs:
   build-push:
-    if: false
     runs-on: ubuntu-latest
     steps:
 
