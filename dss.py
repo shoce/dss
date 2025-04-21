@@ -97,11 +97,17 @@ def sanitize_filename(name):
     return name
 
 def response_json(err, audio_file, video_file):
-    return web.json_response({
-        "error": err,
-        "audio": audio_file,
-        "video": video_file
-    })
+    return web.Response(
+        text=json.dumps(
+            {
+            "error": err,
+            "audio": audio_file,
+            "video": video_file
+            },
+            ensure_ascii=False
+            ) + "\n",
+        content_type="application/json"
+    )
 
 def main():
     app = web.Application()
