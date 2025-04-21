@@ -43,7 +43,7 @@ async def handle_post(request):
         video_file = base + "mp4" if video_q else None
 
         now = time.time()
-        download_key = f"{service}..{video_id} a={audio_q} v={video_q}"
+        download_key = f"{base} a={audio_q} v={video_q}"
         age = None
 
         if download_key in download_start_times:
