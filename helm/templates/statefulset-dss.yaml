@@ -1,0 +1,31 @@
+---
+
+apiVersion: apps/v1
+kind: StatefulSet
+
+metadata:
+  name: dss
+  namespace: {{ $.Release.Namespace }}
+  labels:
+    app: dss
+
+spec:
+  selector:
+    matchLabels:
+      app: dss
+  template:
+    metadata:
+      name: dss
+      labels:
+        app: dss
+
+    spec:
+      containers:
+
+        - name: dss
+          image: "{{ $.Values.ImageNameGithubDss }}:{{ $.Values.ImageTagGithubDss }}"
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 80
+
+

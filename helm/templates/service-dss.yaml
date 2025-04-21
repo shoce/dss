@@ -1,0 +1,19 @@
+---
+
+apiVersion: v1
+kind: Service
+
+metadata:
+  name: dss
+  namespace: {{ $.Release.Namespace }}
+  labels:
+    app: dss
+
+spec:
+  selector:
+    app: dss
+  type: ClusterIP
+  ports:
+    - port: 80
+
+
