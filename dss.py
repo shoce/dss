@@ -23,8 +23,8 @@ async def handle_post(request):
         service = extract_service_name(url)
         video_id = extract_video_id(url)
         base = sanitize_filename(f"{service}..{video_id}.")
-        audio_file = base if audio_q else None
-        video_file = base if video_q else None
+        audio_file = base+"..m4a" if audio_q else None
+        video_file = base+"..mp4" if video_q else None
 
         if audio_q and not os.path.isfile(os.path.join(DOWNLOAD_DIR, audio_file)):
             download_audio(url, base, audio_q)
