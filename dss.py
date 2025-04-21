@@ -1,13 +1,12 @@
+import asyncio
 import os
 import re
 import json
 import time
+from collections import defaultdict
 from datetime import datetime, timedelta
-import asyncio
 
 from aiohttp import web
-from collections import defaultdict
-
 import yt_dlp
 
 DOWNLOAD_DIR = os.path.abspath("downloads/")
@@ -38,8 +37,7 @@ async def handle_post(request):
         return response_json('Either "audio_quality" or "video_quality" must be specified', None, None, None, url)
 
     try:
-        service = extract_service_name(url)
-        video_id = extract_video_id(url)
+        service, video_id = await extract_video_info(url)
         base = sanitize_filename(f"{service}..{video_id}..")
         audio_file = base + "m4a" if audio_q else None
         video_file = base + "mp4" if video_q else None
@@ -76,6 +74,15 @@ async def handle_post(request):
     except Exception as e:
         return response_json(str(e), None, None, None, url)
 
+async def extract_video_info(url):
+    with yt_dlp.YoutubeDL({'quiet': True}) as ydl:
+        info = ydl.extract_info(url, download=False)
+        service = info.get("extractor_key", "unknown")
+        video_id = info.get("id")
+        if not video_id:
+            raise Exception("Unable to extract video ID")
+        return service, video_id
+
 async def do_download(key, url, base, audio_q, video_q):
     async with download_locks[key]:
         if audio_q:
@@ -100,19 +107,6 @@ async def handle_file(request):
     else:
         ctype = "video/mp4"
     return web.FileResponse(path=path, headers={"Content-Type": ctype})
-
-def extract_service_name(url):
-    with yt_dlp.YoutubeDL({'quiet': True}) as ydl:
-        info = ydl.extract_info(url, download=False)
-        return info.get("extractor_key", "unknown")
-
-def extract_video_id(url):
-    with yt_dlp.YoutubeDL({'quiet': True}) as ydl:
-        info = ydl.extract_info(url, download=False)
-        video_id = info.get("id")
-        if not video_id:
-            raise Exception("Unable to extract video ID")
-        return video_id
 
 def download_audio(url, base, quality):
     if quality == "min":
