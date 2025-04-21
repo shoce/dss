@@ -25,17 +25,17 @@ async def handle_post(request):
     try:
         data = await request.json()
     except json.JSONDecodeError:
-        return response_json("Invalid JSON", None, None, None)
+        return response_json("Invalid JSON", None, None, None, None)
 
     url = data.get("url")
     audio_q = data.get("audio_quality")
     video_q = data.get("video_quality")
 
     if not url:
-        return response_json('Missing "url"', None, None, None)
+        return response_json('Missing "url"', None, None, None, None)
 
     if not audio_q and not video_q:
-        return response_json('Either "audio_quality" or "video_quality" must be specified', None, None, None)
+        return response_json('Either "audio_quality" or "video_quality" must be specified', None, None, None, url)
 
     try:
         service = extract_service_name(url)
@@ -69,11 +69,12 @@ async def handle_post(request):
             "",
             audio_file if audio_ready else None,
             video_file if video_ready else None,
-            format_duration(age) if age is not None else None
+            format_duration(age) if age is not None else None,
+            url
         )
 
     except Exception as e:
-        return response_json(str(e), None, None, None)
+        return response_json(str(e), None, None, None, url)
 
 async def do_download(key, url, base, audio_q, video_q):
     async with download_locks[key]:
@@ -150,13 +151,14 @@ def sanitize_filename(name):
     name = re.sub(r"\.+", ".", name)
     return name
 
-def response_json(err, audio_file, video_file, age):
+def response_json(err, audio_file, video_file, age, url):
     return web.Response(
         text=json.dumps({
             "error": err,
             "audio": audio_file,
             "video": video_file,
-            "age": age
+            "age": age,
+            "url": url
         }) + "\n",
         content_type="application/json"
     )
