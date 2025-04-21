@@ -20,12 +20,15 @@ async def handle_post(request):
     if not url:
         return response_json('Missing "url"', None, None)
 
+    if not audio_q and not video_q:
+        return response_json('Either "audio_quality" or "video_quality" must be specified', None, None)
+
     try:
         service = extract_service_name(url)
         video_id = extract_video_id(url)
-        base = sanitize_filename(f"{service}..{video_id}.")
-        audio_file = base+".m4a" if audio_q else None
-        video_file = base+".mp4" if video_q else None
+        base = sanitize_filename(f"{service}..{video_id}..")
+        audio_file = base+"m4a" if audio_q else None
+        video_file = base+"mp4" if video_q else None
 
         if audio_q and not os.path.isfile(os.path.join(DOWNLOAD_DIR, audio_file)):
             download_audio(url, base, audio_q)
@@ -98,14 +101,7 @@ def sanitize_filename(name):
 
 def response_json(err, audio_file, video_file):
     return web.Response(
-        text=json.dumps(
-            {
-            "error": err,
-            "audio": audio_file,
-            "video": video_file
-            },
-            ensure_ascii=False
-            ) + "\n",
+        text=json.dumps({ "error": err, "audio": audio_file, "video": video_file }, ensure_ascii=False) + "\n",
         content_type="application/json"
     )
 
