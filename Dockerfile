@@ -1,7 +1,8 @@
+
 # https://hub.docker.com/_/python/tags
 FROM python:3-slim
 
-WORKDIR /opt/dss
+WORKDIR /opt/dss/
 
 RUN apt-get update
 RUN apt-get install -y ffmpeg
