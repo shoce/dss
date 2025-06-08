@@ -137,11 +137,11 @@ def download_audio(url, afile, aq):
 
 def download_video(url, vfile, vq):
     if vq == "min":
-        format_str = "worstvideo[ext=mp4]+worstaudio/worst"
+        format_str = "worstvideo[ext=mp4]"
     elif vq == "avg":
-        format_str = "best[height<=720][fps<=30][ext=mp4]+bestaudio/best"
+        format_str = "best[height<=720][fps<=30][ext=mp4]"
     else:
-        format_str = "bestvideo[ext=mp4]+bestaudio/best"
+        format_str = "bestvideo[ext=mp4]"
     opts = {
         "format": format_str,
         "outtmpl": os.path.join(DOWNLOAD_DIR, vfile),
@@ -159,6 +159,7 @@ def sanitize_filename(name):
 def response(url=None, err=None, age=None, afile=None, vfile=None, status=200):
     return web.Response(
         status = status,
+        content_type = "application/x-yaml",
         text = yaml.dump(
             data = {
                 "url": url,
@@ -171,7 +172,6 @@ def response(url=None, err=None, age=None, afile=None, vfile=None, status=200):
             explicit_start = True,
             allow_unicode = True,
         ),
-        content_type = "application/x-yaml"
     )
 
 def main():
