@@ -15,6 +15,7 @@ on:
     paths-ignore:
       - 'helm/**'
       - '.github/workflows/helm.yaml'
+      - 'readme.*'
 
 env:
   REGISTRY: ghcr.io
