@@ -5,7 +5,6 @@
 import asyncio
 import os
 import re
-import json
 import yaml
 import time
 from collections import defaultdict
@@ -27,12 +26,13 @@ def format_duration(seconds):
 
 async def handle_post(request):
     try:
-        data = await request.json()
-    except json.JSONDecodeError:
-        return response(err="invalid json", None, None, None, None)
+        data = await request.post()
+    except Exception as err:
+        return response(err=f"invalid form data: {err}", None, None, None, None)
 
     url = data.get("url")
-    url = url.removeprefix("http://").removeprefix("https://")
+    if url:
+        url = url.removeprefix("http://").removeprefix("https://")
     aq = data.get("aq")
     vq = data.get("vq")
 
