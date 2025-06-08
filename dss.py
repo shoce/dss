@@ -158,7 +158,7 @@ def sanitize_filename(name):
 def response(err, afile, vfile, age, url):
     return web.Response(
         text=yaml.dump({
-            "url": url
+            "url": url,
             "err": err,
             "age": age,
             "a": afile,
