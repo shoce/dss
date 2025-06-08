@@ -162,8 +162,8 @@ def response(url=None, err=None, age=None, afile=None, vfile=None, status=200):
         content_type = "application/x-yaml",
         text = yaml.dump(
             data = {
-                "url": url,
                 "err": err,
+                "url": url,
                 "age": age,
                 "a": afile,
                 "v": vfile,
