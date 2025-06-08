@@ -104,7 +104,7 @@ async def handle_file(request):
     print(f"DEBUG filename=={filename}")
     if not re.match(r"^[a-zA-Z0-9.]+$", filename):
         print(f"DEBUG filename=={filename} not matching regexp")
-        return web.Response(status=400, text="Invalid filename")
+        return web.Response(status=400, text="invalid filename")
     if filename.endswith(".m4a"):
         ctype = "audio/mp4"
     elif filename.endswith(".mp4"):
@@ -115,7 +115,7 @@ async def handle_file(request):
     print(f"DEBUG path=={path}")
     if not os.path.isfile(path):
         print(f"DEBUG path=={path} file does not exist")
-        return web.Response(status=404, text="File not found")
+        return web.Response(status=404, text="file not found")
     return web.FileResponse(path=path, headers={"Content-Type": ctype})
 
 def download_audio(url, afile, aq):
@@ -157,8 +157,12 @@ def sanitize_filename(name):
     name = re.sub(r"\.+", ".", name)
     return name
 
-def response(err, afile, vfile, age, url):
+def response(err=None, afile=None, vfile=None, age=None, url=None):
+    status = 200
+    if err:
+        status = 500
     return web.Response(
+        status=status,
         text=yaml.dump({
             "url": url,
             "err": err,
