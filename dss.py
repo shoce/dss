@@ -103,7 +103,7 @@ async def handle_file(request):
         return web.Response(status=400, text="Invalid filename")
     if filename.endswith(".m4a"):
         ctype = "audio/mp4"
-    else if filename.endswith(".mp4"):
+    elif filename.endswith(".mp4"):
         ctype = "video/mp4"
     else:
         return web.Response(status=404, text="Invalid filename extension")
@@ -135,7 +135,7 @@ def download_audio(url, base, quality):
 def download_video(url, base, quality):
     if quality == "min":
         format_str = "worstvideo[ext=mp4]+worstaudio/worst"
-    else if quality == "avg":
+    elif quality == "avg":
         format_str = "best[height<=480][fps<=30][ext=mp4]+bestaudio/best"
     else:
         format_str = "bestvideo[ext=mp4]+bestaudio/best"
