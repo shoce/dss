@@ -119,9 +119,9 @@ async def handle_file(request):
 
 def download_audio(url, afile, aq):
     if aq == "min":
-        format_str = "worstaudio[ext=m4a]/worstaudio"
+        format_str = "worstaudio[ext=m4a]"
     else:
-        format_str = "bestaudio[ext=m4a]/bestaudio"
+        format_str = "bestaudio[ext=m4a]"
     opts = {
         "format": format_str,
         "outtmpl": os.path.join(DOWNLOAD_DIR, afile),
@@ -139,7 +139,7 @@ def download_video(url, vfile, vq):
     if vq == "min":
         format_str = "worstvideo[ext=mp4]"
     elif vq == "avg":
-        format_str = "best[height<=720][fps<=30][ext=mp4]"
+        format_str = "bestvideo[height<=720][fps<=30][ext=mp4]"
     else:
         format_str = "bestvideo[ext=mp4]"
     opts = {
