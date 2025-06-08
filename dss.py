@@ -57,11 +57,9 @@ async def handle_post(request):
         if download_key in download_start_times:
             age = now - download_start_times[download_key]
 
-        yt_dlp.YoutubeDL({"listformats": True}).download([url])
-
-        # Launch background task if not running
         if download_key not in download_tasks:
             download_start_times[download_key] = now
+            yt_dlp.YoutubeDL({"listformats": True}).download([url])
             download_tasks[download_key] = {
                 "task": asyncio.create_task(
                     do_download(download_key, url, afile, aq, vfile, vq)
