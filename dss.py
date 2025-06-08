@@ -33,8 +33,8 @@ async def handle_post(request):
         return response(err=f"invalid form data: {err}", status=400)
 
     url = data.get("url")
-    if url:
-        url = url.removeprefix("http://").removeprefix("https://")
+#    if url:
+#        url = url.removeprefix("http://").removeprefix("https://")
     aq = data.get("aq")
     vq = data.get("vq")
 
@@ -47,11 +47,11 @@ async def handle_post(request):
     try:
         service, video_id = await extract_video_info(url)
         base = sanitize_filename(f"{service}..{video_id}..")
-        afile = base + "m4a" if aq else None
-        vfile = base + "mp4" if vq else None
+        afile = base + f"{aq}..m4a" if aq else None
+        vfile = base + f"{vq}..mp4" if vq else None
 
         now = time.time()
-        download_key = f"base={base} aq={aq} vq={vq}"
+        download_key = f"service={service} video_id={video_id} aq={aq} vq={vq}"
         age = None
 
         if download_key in download_start_times:
