@@ -52,10 +52,12 @@ async def handle_post(request):
 
         now = time.time()
         download_key = f"service={service} video_id={video_id} aq={aq} vq={vq}"
-        age = None
 
+        age = None
         if download_key in download_start_times:
             age = now - download_start_times[download_key]
+
+        yt_dlp.YoutubeDL({"listformats": True}).download([url])
 
         # Launch background task if not running
         if download_key not in download_tasks:
@@ -136,7 +138,6 @@ def download_audio(key, url, afile, aq):
             "preferredcodec": "m4a",
             "preferredquality": "0",
         }],
-        "listformats": True,
     }
     try:
         yt_dlp.YoutubeDL(opts).download([url])
@@ -158,7 +159,6 @@ def download_video(key, url, vfile, vq):
         "outtmpl": os.path.join(DOWNLOAD_DIR, vfile),
         "quiet": True,
         "merge_output_format": "mp4",
-        "listformats": True,
     }
     try:
         yt_dlp.YoutubeDL(opts).download([url])
