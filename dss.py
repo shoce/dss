@@ -6,6 +6,7 @@ import asyncio
 import os
 import re
 import json
+import yaml
 import time
 from collections import defaultdict
 from datetime import datetime, timedelta
@@ -28,7 +29,7 @@ async def handle_post(request):
     try:
         data = await request.json()
     except json.JSONDecodeError:
-        return response_json("Invalid JSON", None, None, None, None)
+        return response(err="invalid json", None, None, None, None)
 
     url = data.get("url")
     url = url.removeprefix("http://").removeprefix("https://")
@@ -36,10 +37,10 @@ async def handle_post(request):
     vq = data.get("vq")
 
     if not url:
-        return response_json('Missing "url"', None, None, None, None)
+        return response(err='missing "url"', None, None, None, None)
 
     if not aq and not vq:
-        return response_json('Either "aq" or "vq" must be specified', None, None, None, url)
+        return response(err='"aq" or "vq" must be specified', None, None, None, url=url)
 
     try:
         service, video_id = await extract_video_info(url)
@@ -68,16 +69,16 @@ async def handle_post(request):
         video_path = os.path.join(DOWNLOAD_DIR, vfile) if vfile else None
         video_ready = os.path.isfile(video_path) if video_path else False
 
-        return response_json(
-            "",
-            afile if audio_ready else None,
-            vfile if video_ready else None,
-            format_duration(age) if age is not None else None,
-            url
+        return response(
+            err = "",
+            afile = afile if audio_ready else None,
+            vfile = vfile if video_ready else None,
+            age = format_duration(age) if age is not None else None,
+            url = url
         )
 
     except Exception as e:
-        return response_json(str(e), None, None, None, url)
+        return response(err=str(e), None, None, None, url=url)
 
 async def extract_video_info(url):
     with yt_dlp.YoutubeDL({'quiet': True}) as ydl:
@@ -154,16 +155,16 @@ def sanitize_filename(name):
     name = re.sub(r"\.+", ".", name)
     return name
 
-def response_json(err, afile, vfile, age, url):
+def response(err, afile, vfile, age, url):
     return web.Response(
-        text=json.dumps({
-            "error": err,
+        text=yaml.dump({
+            "url": url
+            "err": err,
+            "age": age,
             "a": afile,
             "v": vfile,
-            "age": age,
-            "url": url
-        }) + "\n",
-        content_type="application/json"
+        }),
+        content_type="application/x-yaml"
     )
 
 def main():
