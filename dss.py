@@ -115,14 +115,14 @@ async def handle_file(request):
         return web.Response(status=404, text="File not found")
     return web.FileResponse(path=path, headers={"Content-Type": ctype})
 
-def download_audio(url, base, quality):
-    if quality == "min":
+def download_audio(url, afile, aq):
+    if aq == "min":
         format_str = "worstaudio[ext=m4a]/worstaudio"
     else:
         format_str = "bestaudio[ext=m4a]/bestaudio"
     opts = {
         "format": format_str,
-        "outtmpl": os.path.join(DOWNLOAD_DIR, base),
+        "outtmpl": os.path.join(DOWNLOAD_DIR, afile),
         "quiet": True,
         "postprocessors": [{
             "key": "FFmpegExtractAudio",
@@ -133,16 +133,16 @@ def download_audio(url, base, quality):
     with yt_dlp.YoutubeDL(opts) as ydl:
         ydl.download([url])
 
-def download_video(url, base, quality):
-    if quality == "min":
+def download_video(url, vfile, vq):
+    if vq == "min":
         format_str = "worstvideo[ext=mp4]+worstaudio/worst"
-    elif quality == "avg":
+    elif vq == "avg":
         format_str = "best[height<=720][fps<=30][ext=mp4]+bestaudio/best"
     else:
         format_str = "bestvideo[ext=mp4]+bestaudio/best"
     opts = {
         "format": format_str,
-        "outtmpl": os.path.join(DOWNLOAD_DIR, base),
+        "outtmpl": os.path.join(DOWNLOAD_DIR, vfile),
         "quiet": True,
         "merge_output_format": "mp4",
     }
