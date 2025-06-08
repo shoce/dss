@@ -1,3 +1,7 @@
+#
+# download service server
+#
+
 import asyncio
 import os
 import re
@@ -27,23 +31,23 @@ async def handle_post(request):
         return response_json("Invalid JSON", None, None, None, None)
 
     url = data.get("url")
-    audio_q = data.get("audio_quality")
-    video_q = data.get("video_quality")
+    aq = data.get("audio_quality")
+    vq = data.get("video_quality")
 
     if not url:
         return response_json('Missing "url"', None, None, None, None)
 
-    if not audio_q and not video_q:
+    if not aq and not vq:
         return response_json('Either "audio_quality" or "video_quality" must be specified', None, None, None, url)
 
     try:
         service, video_id = await extract_video_info(url)
         base = sanitize_filename(f"{service}..{video_id}..")
-        audio_file = base + "m4a" if audio_q else None
-        video_file = base + "mp4" if video_q else None
+        audio_file = base + "m4a" if aq else None
+        video_file = base + "mp4" if vq else None
 
         now = time.time()
-        download_key = f"{base} a={audio_q} v={video_q}"
+        download_key = f"base={base} aq={aq} vq={vq}"
         age = None
 
         if download_key in download_start_times:
@@ -53,7 +57,7 @@ async def handle_post(request):
         if download_key not in download_tasks:
             download_start_times[download_key] = now
             download_tasks[download_key] = asyncio.create_task(
-                do_download(download_key, url, base, audio_q, video_q)
+                do_download(download_key, url, base, aq, vq)
             )
             age = 0
 
@@ -83,12 +87,12 @@ async def extract_video_info(url):
             raise Exception("Unable to extract video ID")
         return service, video_id
 
-async def do_download(key, url, base, audio_q, video_q):
+async def do_download(key, url, base, aq, vq):
     async with download_locks[key]:
-        if audio_q:
-            await asyncio.to_thread(download_audio, url, base, audio_q)
-        if video_q:
-            await asyncio.to_thread(download_video, url, base, video_q)
+        if aq:
+            await asyncio.to_thread(download_audio, url, base, aq)
+        if vq:
+            await asyncio.to_thread(download_video, url, base, vq)
         del download_tasks[key]
 
 async def handle_file(request):
@@ -97,15 +101,17 @@ async def handle_file(request):
     if not re.match(r"^[a-zA-Z0-9.]+$", filename):
         print(f"DEBUG filename=={filename} not matching regexp")
         return web.Response(status=400, text="Invalid filename")
+    if filename.endswith(".m4a"):
+        ctype = "audio/mp4"
+    else if filename.endswith(".mp4"):
+        ctype = "video/mp4"
+    else:
+        return web.Response(status=404, text="Invalid filename extension")
     path = os.path.join(DOWNLOAD_DIR, filename)
     print(f"DEBUG path=={path}")
     if not os.path.isfile(path):
         print(f"DEBUG path=={path} file does not exist")
         return web.Response(status=404, text="File not found")
-    if filename.endswith(".m4a"):
-        ctype = "audio/mp4"
-    else:
-        ctype = "video/mp4"
     return web.FileResponse(path=path, headers={"Content-Type": ctype})
 
 def download_audio(url, base, quality):
@@ -129,6 +135,8 @@ def download_audio(url, base, quality):
 def download_video(url, base, quality):
     if quality == "min":
         format_str = "worstvideo[ext=mp4]+worstaudio/worst"
+    else if quality == "avg":
+        format_str = "best[height<=480][fps<=30][ext=mp4]+bestaudio/best"
     else:
         format_str = "bestvideo[ext=mp4]+bestaudio/best"
     opts = {
