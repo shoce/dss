@@ -42,7 +42,7 @@ async def handle_post(request):
         return response(err='missing "url"')
 
     if not aq and not vq:
-        return response(err='missing both "aq" and "vq"', url=url)
+        return response(url=url, err='missing both "aq" and "vq"')
 
     try:
         service, video_id = await extract_video_info(url)
@@ -72,15 +72,14 @@ async def handle_post(request):
         video_ready = os.path.isfile(video_path) if video_path else False
 
         return response(
-            err = "",
+            url = url,
+            age = format_duration(age) if age is not None else None,
             afile = afile if audio_ready else None,
             vfile = vfile if video_ready else None,
-            age = format_duration(age) if age is not None else None,
-            url = url
         )
 
     except Exception as err:
-        return response(err=f"{err}", url=url)
+        return response(url=url, err=f"{err}")
 
 async def extract_video_info(url):
     with yt_dlp.YoutubeDL({'quiet': True}) as ydl:
@@ -157,20 +156,20 @@ def sanitize_filename(name):
     name = re.sub(r"\.+", ".", name)
     return name
 
-def response(err=None, afile=None, vfile=None, age=None, url=None):
+def response(url=None, err=None, age=None, afile=None, vfile=None):
     status = 200
     if err:
         status = 500
     return web.Response(
-        status=status,
-        text=yaml.dump({
+        status = status,
+        text = yaml.dump({
             "url": url,
             "err": err,
             "age": age,
             "a": afile,
             "v": vfile,
         }),
-        content_type="application/x-yaml"
+        content_type = "application/x-yaml"
     )
 
 def main():
