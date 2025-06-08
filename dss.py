@@ -106,7 +106,7 @@ async def handle_file(request):
     elif filename.endswith(".mp4"):
         ctype = "video/mp4"
     else:
-        return web.Response(status=404, text="Invalid filename extension")
+        ctype = "video/mp4"
     path = os.path.join(DOWNLOAD_DIR, filename)
     print(f"DEBUG path=={path}")
     if not os.path.isfile(path):
