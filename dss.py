@@ -159,13 +159,18 @@ def sanitize_filename(name):
 def response(url=None, err=None, age=None, afile=None, vfile=None, status=200):
     return web.Response(
         status = status,
-        text = yaml.dump({
-            "url": url,
-            "err": err,
-            "age": age,
-            "a": afile,
-            "v": vfile,
-        }),
+        text = yaml.dump(
+            data = {
+                "url": url,
+                "err": err,
+                "age": age,
+                "a": afile,
+                "v": vfile,
+            },
+            sort_keys = False,
+            explicit_start = True,
+            allow_unicode = True,
+        ),
         content_type = "application/x-yaml"
     )
 
