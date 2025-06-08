@@ -30,7 +30,7 @@ async def handle_post(request):
     try:
         data = await request.post()
     except Exception as err:
-        return response(err=f"invalid form data: {err}")
+        return response(err=f"invalid form data: {err}", status=400)
 
     url = data.get("url")
     if url:
@@ -39,10 +39,10 @@ async def handle_post(request):
     vq = data.get("vq")
 
     if not url:
-        return response(err='missing "url"')
+        return response(err='missing "url"', status=400)
 
     if not aq and not vq:
-        return response(url=url, err='missing both "aq" and "vq"')
+        return response(url=url, err='missing both "aq" and "vq"', status=400)
 
     try:
         service, video_id = await extract_video_info(url)
@@ -79,7 +79,7 @@ async def handle_post(request):
         )
 
     except Exception as err:
-        return response(url=url, err=f"{err}")
+        return response(url=url, err=f"{err}", status=500)
 
 async def extract_video_info(url):
     with yt_dlp.YoutubeDL({'quiet': True}) as ydl:
@@ -156,10 +156,7 @@ def sanitize_filename(name):
     name = re.sub(r"\.+", ".", name)
     return name
 
-def response(url=None, err=None, age=None, afile=None, vfile=None):
-    status = 200
-    if err:
-        status = 500
+def response(url=None, err=None, age=None, afile=None, vfile=None, status=200):
     return web.Response(
         status = status,
         text = yaml.dump({
