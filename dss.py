@@ -4,6 +4,7 @@
 # pylint dss.py
 #
 
+
 import asyncio
 import os
 import re
@@ -15,6 +16,7 @@ from datetime import datetime, timedelta
 from aiohttp import web
 import yt_dlp
 
+
 DOWNLOAD_DIR = os.path.abspath("downloads/")
 os.makedirs(DOWNLOAD_DIR, exist_ok=True)
 
@@ -22,9 +24,6 @@ download_tasks = {}
 download_start_times = {}
 download_locks = defaultdict(asyncio.Lock)
 
-def format_duration(seconds):
-    mins, secs = divmod(int(seconds), 60)
-    return f"{mins}m{secs}s"
 
 async def handle_post(request):
     try:
@@ -87,6 +86,7 @@ async def handle_post(request):
     except Exception as err:
         return response(url=url, err=f"{err}", status=500)
 
+
 async def extract_video_info(url):
     with yt_dlp.YoutubeDL({'quiet': True}) as ydl:
         info = ydl.extract_info(url, download=False)
@@ -96,12 +96,14 @@ async def extract_video_info(url):
             raise Exception("Unable to extract video ID")
         return service, video_id
 
+
 async def do_download(key, url, afile, aq, vfile, vq):
     async with download_locks[key]:
         if aq:
             await asyncio.to_thread(download_audio, key, url, afile, aq)
         if vq:
             await asyncio.to_thread(download_video, key, url, vfile, vq)
+
 
 async def handle_file(request):
     filename = request.match_info["filename"]
@@ -121,6 +123,7 @@ async def handle_file(request):
         print(f"DEBUG path=={path} file does not exist")
         return web.Response(status=404, text="file not found")
     return web.FileResponse(path=path, headers={"Content-Type": ctype})
+
 
 def download_audio(key, url, afile, aq):
     if aq == "min":
@@ -143,6 +146,7 @@ def download_audio(key, url, afile, aq):
         print(f"download err: {download_err}")
         download_tasks[key]["err"] = download_err
 
+
 def download_video(key, url, vfile, vq):
     if vq == "min":
         format_str = "worstvideo[vcodec^=avc1]"
@@ -164,10 +168,12 @@ def download_video(key, url, vfile, vq):
         print(f"download err: {download_err}")
         download_tasks[key]["err"] = download_err
 
+
 def sanitize_filename(name):
     name = re.sub(r"[^a-zA-Z0-9.]", ".", name)
     name = re.sub(r"\.+", ".", name)
     return name
+
 
 def response(url=None, err=None, age=None, afile=None, vfile=None, status=200):
     return web.Response(
@@ -187,17 +193,25 @@ def response(url=None, err=None, age=None, afile=None, vfile=None, status=200):
         ),
     )
 
+
+def format_duration(seconds):
+    mins, secs = divmod(int(seconds), 60)
+    return f"{mins}m{secs}s"
+
+
 @web.middleware
 async def server_header_middleware(request, handler):
     response = await handler(request)
     response.headers['Server'] = "dss/1.0"
     return response
 
+
 def main():
     app = web.Application(middlewares=[server_header_middleware])
     app.router.add_post("/", handle_post)
     app.router.add_get("/{filename:.+}", handle_file)
     web.run_app(app, port=80)
+
 
 if __name__ == "__main__":
     main()
