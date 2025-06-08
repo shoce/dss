@@ -138,11 +138,11 @@ def download_audio(url, afile, aq):
 def download_video(url, vfile, vq):
     a_format_str = "bestaudio[ext=m4a]"
     if vq == "min":
-        format_str = "worstvideo[vcodec=avc1]"+f"+{a_format_str}"
+        format_str = "worstvideo[vcodec^=avc1]"+f"+{a_format_str}"
     elif vq == "avg":
-        format_str = "bestvideo[height<=720][fps<=30][vcodec=avc1]"+f"+{a_format_str}"
+        format_str = "bestvideo[height<=720][fps<=30][vcodec=^avc1]"+f"+{a_format_str}"
     else:
-        format_str = "bestvideo[vcodec=avc1]"+f"+{a_format_str}"
+        format_str = "bestvideo[vcodec=^avc1]"+f"+{a_format_str}"
     print(f"DEBUG download_video format_str=={format_str}")
     opts = {
         "format": format_str,
