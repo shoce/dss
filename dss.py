@@ -178,7 +178,7 @@ def main():
     app = web.Application()
     app.router.add_post("/", handle_post)
     app.router.add_get("/{filename:.+}", handle_file)
-    web.run_app(app, port=80)
+    web.run_app(app, port=80, server_header="dss/1.0")
 
 if __name__ == "__main__":
     main()
