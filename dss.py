@@ -31,6 +31,7 @@ async def handle_post(request):
         return response_json("Invalid JSON", None, None, None, None)
 
     url = data.get("url")
+    url = url.removeprefix("http://").removeprefix("https://")
     aq = data.get("audio_quality")
     vq = data.get("video_quality")
 
