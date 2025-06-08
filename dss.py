@@ -44,8 +44,8 @@ async def handle_post(request):
     try:
         service, video_id = await extract_video_info(url)
         base = sanitize_filename(f"{service}..{video_id}..")
-        audio_file = base + "m4a" if aq else None
-        video_file = base + "mp4" if vq else None
+        afile = base + "m4a" if aq else None
+        vfile = base + "mp4" if vq else None
 
         now = time.time()
         download_key = f"base={base} aq={aq} vq={vq}"
@@ -58,20 +58,20 @@ async def handle_post(request):
         if download_key not in download_tasks:
             download_start_times[download_key] = now
             download_tasks[download_key] = asyncio.create_task(
-                do_download(download_key, url, audio_file, aq, video_file, vq)
+                do_download(download_key, url, afile, aq, vfile, vq)
             )
             age = 0
 
-        audio_path = os.path.join(DOWNLOAD_DIR, audio_file) if audio_file else None
+        audio_path = os.path.join(DOWNLOAD_DIR, afile) if afile else None
         audio_ready = os.path.isfile(audio_path) if audio_path else False
 
-        video_path = os.path.join(DOWNLOAD_DIR, video_file) if video_file else None
+        video_path = os.path.join(DOWNLOAD_DIR, vfile) if vfile else None
         video_ready = os.path.isfile(video_path) if video_path else False
 
         return response_json(
             "",
-            audio_file if audio_ready else None,
-            video_file if video_ready else None,
+            afile if audio_ready else None,
+            vfile if video_ready else None,
             format_duration(age) if age is not None else None,
             url
         )
@@ -154,12 +154,12 @@ def sanitize_filename(name):
     name = re.sub(r"\.+", ".", name)
     return name
 
-def response_json(err, audio_file, video_file, age, url):
+def response_json(err, afile, vfile, age, url):
     return web.Response(
         text=json.dumps({
             "error": err,
-            "audio": audio_file,
-            "video": video_file,
+            "a": afile,
+            "v": vfile,
             "age": age,
             "url": url
         }) + "\n",
