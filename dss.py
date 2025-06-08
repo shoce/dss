@@ -109,7 +109,7 @@ async def handle_file(request):
     elif filename.endswith(".mp4"):
         ctype = "video/mp4"
     else:
-        ctype = "video/mp4"
+        ctype = "application/octet-stream"
     path = os.path.join(DOWNLOAD_DIR, filename)
     print(f"DEBUG path=={path}")
     if not os.path.isfile(path):
@@ -119,9 +119,9 @@ async def handle_file(request):
 
 def download_audio(url, afile, aq):
     if aq == "min":
-        format_str = "worstaudio[acodec=aac]"
+        format_str = "worstaudio[acodec=mp4a]"
     else:
-        format_str = "bestaudio[acodec=aac]"
+        format_str = "bestaudio[acodec=mp4a]"
     opts = {
         "format": format_str,
         "outtmpl": os.path.join(DOWNLOAD_DIR, afile),
@@ -136,7 +136,7 @@ def download_audio(url, afile, aq):
         ydl.download([url])
 
 def download_video(url, vfile, vq):
-    a_format_str = "bestaudio[acodec=aac]"
+    a_format_str = "bestaudio[acodec=mp4a]"
     if vq == "min":
         format_str = "worstvideo[vcodec=avc1]"+f"+{a_format_str}"
     elif vq == "avg":
