@@ -1,5 +1,7 @@
 #
-# download service server
+# python3 -m py_compile dss.py
+# python3 -m compileall dss.py
+# pylint dss.py
 #
 
 import asyncio
