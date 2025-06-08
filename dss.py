@@ -28,7 +28,7 @@ async def handle_post(request):
     try:
         data = await request.post()
     except Exception as err:
-        return response(err=f"invalid form data: {err}", None, None, None, None)
+        return response(err=f"invalid form data: {err}")
 
     url = data.get("url")
     if url:
@@ -37,10 +37,10 @@ async def handle_post(request):
     vq = data.get("vq")
 
     if not url:
-        return response(err='missing "url"', None, None, None, None)
+        return response(err='missing "url"')
 
     if not aq and not vq:
-        return response(err='"aq" or "vq" must be specified', None, None, None, url=url)
+        return response(err='missing both "aq" and "vq"', url=url)
 
     try:
         service, video_id = await extract_video_info(url)
@@ -77,8 +77,8 @@ async def handle_post(request):
             url = url
         )
 
-    except Exception as e:
-        return response(err=str(e), None, None, None, url=url)
+    except Exception as err:
+        return response(err=f"{err}", url=url)
 
 async def extract_video_info(url):
     with yt_dlp.YoutubeDL({'quiet': True}) as ydl:
