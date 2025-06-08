@@ -76,7 +76,7 @@ async def handle_post(request):
         download_err = download_tasks[download_key]["err"]
 
         return response(
-            err = download_err,
+            err = download_err if download_err else None,
             url = url,
             age = format_duration(age) if age is not None else None,
             afile = afile if audio_ready else None,
@@ -147,9 +147,9 @@ def download_video(key, url, vfile, vq):
     if vq == "min":
         format_str = "worstvideo[vcodec^=avc1]"
     elif vq == "avg":
-        format_str = "bestvideo[vcodec=^avc1][height<=720][fps<=30]"
+        format_str = "bestvideo[vcodec^=avc1][height<=720][fps<=30]"
     else:
-        format_str = "bestvideo[vcodec=^avc1]"
+        format_str = "bestvideo[vcodec^=avc1]"
     format_str += "+bestaudio[ext=m4a]"
     print(f"DEBUG download_video format_str=={format_str}")
     opts = {
@@ -176,7 +176,7 @@ def response(url=None, err=None, age=None, afile=None, vfile=None, status=200):
         content_type = "application/x-yaml",
         text = yaml.dump(
             data = {
-                "err": err,
+                "err": str(err),
                 "url": url,
                 "age": age,
                 "a": afile,
