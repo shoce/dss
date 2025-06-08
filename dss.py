@@ -131,6 +131,7 @@ def download_audio(url, afile, aq):
             "preferredcodec": "m4a",
             "preferredquality": "0",
         }],
+        "listformats": True,
     }
     with yt_dlp.YoutubeDL(opts) as ydl:
         ydl.download([url])
@@ -149,6 +150,7 @@ def download_video(url, vfile, vq):
         "outtmpl": os.path.join(DOWNLOAD_DIR, vfile),
         "quiet": True,
         "merge_output_format": "mp4",
+        "listformats": True,
     }
     with yt_dlp.YoutubeDL(opts) as ydl:
         ydl.download([url])
