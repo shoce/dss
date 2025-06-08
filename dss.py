@@ -137,7 +137,7 @@ def download_video(url, base, quality):
     if quality == "min":
         format_str = "worstvideo[ext=mp4]+worstaudio/worst"
     elif quality == "avg":
-        format_str = "best[height<=480][fps<=30][ext=mp4]+bestaudio/best"
+        format_str = "best[height<=720][fps<=30][ext=mp4]+bestaudio/best"
     else:
         format_str = "bestvideo[ext=mp4]+bestaudio/best"
     opts = {
