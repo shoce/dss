@@ -64,6 +64,7 @@ async def handle_post(request):
                 "task": asyncio.create_task(
                     do_download(download_key, url, afile, aq, vfile, vq)
                 ),
+                "err": None,
             }
             age = 0
 
@@ -139,9 +140,9 @@ def download_audio(key, url, afile, aq):
     }
     try:
         yt_dlp.YoutubeDL(opts).download([url])
-    except Exception as err:
-        print(f"download err: {err}")
-        download_tasks[key]["err"] = err
+    except Exception as download_err:
+        print(f"download err: {download_err}")
+        download_tasks[key]["err"] = download_err
 
 def download_video(key, url, vfile, vq):
     if vq == "min":
@@ -161,9 +162,9 @@ def download_video(key, url, vfile, vq):
     }
     try:
         yt_dlp.YoutubeDL(opts).download([url])
-    except Exception as err:
-        print(f"download err: {err}")
-        download_tasks[key]["err"] = err
+    except Exception as download_err:
+        print(f"download err: {download_err}")
+        download_tasks[key]["err"] = download_err
 
 def sanitize_filename(name):
     name = re.sub(r"[^a-zA-Z0-9.]", ".", name)
