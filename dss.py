@@ -57,7 +57,7 @@ async def handle_post(request):
         if download_key not in download_tasks:
             download_start_times[download_key] = now
             download_tasks[download_key] = asyncio.create_task(
-                do_download(download_key, url, base, aq, vq)
+                do_download(download_key, url, audio_file, aq, video_file, vq)
             )
             age = 0
 
@@ -87,12 +87,12 @@ async def extract_video_info(url):
             raise Exception("Unable to extract video ID")
         return service, video_id
 
-async def do_download(key, url, base, aq, vq):
+async def do_download(key, url, afile, aq, vfile, vq):
     async with download_locks[key]:
         if aq:
-            await asyncio.to_thread(download_audio, url, base, aq)
+            await asyncio.to_thread(download_audio, url, afile, aq)
         if vq:
-            await asyncio.to_thread(download_video, url, base, vq)
+            await asyncio.to_thread(download_video, url, vfile, vq)
         del download_tasks[key]
 
 async def handle_file(request):
