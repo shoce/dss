@@ -60,9 +60,11 @@ async def handle_post(request):
         # Launch background task if not running
         if download_key not in download_tasks:
             download_start_times[download_key] = now
-            download_tasks[download_key] = asyncio.create_task(
-                do_download(download_key, url, afile, aq, vfile, vq)
-            )
+            download_tasks[download_key] = {
+                "task": asyncio.create_task(
+                    do_download(download_key, url, afile, aq, vfile, vq)
+                ),
+            }
             age = 0
 
         audio_path = os.path.join(DOWNLOAD_DIR, afile) if afile else None
@@ -71,7 +73,10 @@ async def handle_post(request):
         video_path = os.path.join(DOWNLOAD_DIR, vfile) if vfile else None
         video_ready = os.path.isfile(video_path) if video_path else False
 
+        download_err = download_tasks[download_key]["err"]
+
         return response(
+            err = download_err,
             url = url,
             age = format_duration(age) if age is not None else None,
             afile = afile if audio_ready else None,
@@ -93,10 +98,9 @@ async def extract_video_info(url):
 async def do_download(key, url, afile, aq, vfile, vq):
     async with download_locks[key]:
         if aq:
-            await asyncio.to_thread(download_audio, url, afile, aq)
+            await asyncio.to_thread(download_audio, key, url, afile, aq)
         if vq:
-            await asyncio.to_thread(download_video, url, vfile, vq)
-        del download_tasks[key]
+            await asyncio.to_thread(download_video, key, url, vfile, vq)
 
 async def handle_file(request):
     filename = request.match_info["filename"]
@@ -117,7 +121,7 @@ async def handle_file(request):
         return web.Response(status=404, text="file not found")
     return web.FileResponse(path=path, headers={"Content-Type": ctype})
 
-def download_audio(url, afile, aq):
+def download_audio(key, url, afile, aq):
     if aq == "min":
         format_str = "worstaudio[ext=m4a]"
     else:
@@ -133,17 +137,20 @@ def download_audio(url, afile, aq):
         }],
         "listformats": True,
     }
-    with yt_dlp.YoutubeDL(opts) as ydl:
-        ydl.download([url])
+    try:
+        yt_dlp.YoutubeDL(opts).download([url])
+    except Exception as err:
+        print(f"download err: {err}")
+        download_tasks[key]["err"] = err
 
-def download_video(url, vfile, vq):
-    a_format_str = "bestaudio[ext=m4a]"
+def download_video(key, url, vfile, vq):
     if vq == "min":
-        format_str = "worstvideo[vcodec^=avc1]"+f"+{a_format_str}"
+        format_str = "worstvideo[vcodec^=avc1]"
     elif vq == "avg":
-        format_str = "bestvideo[height<=720][fps<=30][vcodec=^avc1]"+f"+{a_format_str}"
+        format_str = "bestvideo[vcodec=^avc1][height<=720][fps<=30]"
     else:
-        format_str = "bestvideo[vcodec=^avc1]"+f"+{a_format_str}"
+        format_str = "bestvideo[vcodec=^avc1]"
+    format_str += "+bestaudio[ext=m4a]"
     print(f"DEBUG download_video format_str=={format_str}")
     opts = {
         "format": format_str,
@@ -152,8 +159,11 @@ def download_video(url, vfile, vq):
         "merge_output_format": "mp4",
         "listformats": True,
     }
-    with yt_dlp.YoutubeDL(opts) as ydl:
-        ydl.download([url])
+    try:
+        yt_dlp.YoutubeDL(opts).download([url])
+    except Exception as err:
+        print(f"download err: {err}")
+        download_tasks[key]["err"] = err
 
 def sanitize_filename(name):
     name = re.sub(r"[^a-zA-Z0-9.]", ".", name)
