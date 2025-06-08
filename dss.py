@@ -174,11 +174,17 @@ def response(url=None, err=None, age=None, afile=None, vfile=None, status=200):
         ),
     )
 
+@web.middleware
+async def server_header_middleware(request, handler):
+    response = await handler(request)
+    response.headers['Server'] = "dss/1.0"
+    return response
+
 def main():
-    app = web.Application()
+    app = web.Application(middlewares=[server_header_middleware])
     app.router.add_post("/", handle_post)
     app.router.add_get("/{filename:.+}", handle_file)
-    web.run_app(app, port=80, server_header="dss/1.0")
+    web.run_app(app, port=80)
 
 if __name__ == "__main__":
     main()
