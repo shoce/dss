@@ -32,14 +32,14 @@ async def handle_post(request):
 
     url = data.get("url")
     url = url.removeprefix("http://").removeprefix("https://")
-    aq = data.get("audio_quality")
-    vq = data.get("video_quality")
+    aq = data.get("aq")
+    vq = data.get("vq")
 
     if not url:
         return response_json('Missing "url"', None, None, None, None)
 
     if not aq and not vq:
-        return response_json('Either "audio_quality" or "video_quality" must be specified', None, None, None, url)
+        return response_json('Either "aq" or "vq" must be specified', None, None, None, url)
 
     try:
         service, video_id = await extract_video_info(url)
