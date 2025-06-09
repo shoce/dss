@@ -108,7 +108,7 @@ async def do_download(key, url, afile, aq, vfile, vq):
 async def handle_file(request):
     filename = request.match_info["filename"]
     print(f"DEBUG filename=={filename}")
-    if not re.match(r"^[a-zA-Z0-9.]+$", filename):
+    if not re.match(r"^[a-zA-Z0-9_.]+$", filename):
         print(f"DEBUG filename=={filename} not matching regexp")
         return web.Response(status=400, text="invalid filename")
     if filename.endswith(".m4a"):
@@ -169,12 +169,6 @@ def download_video(key, url, vfile, vq):
         download_tasks[key]["err"] = download_err
 
 
-def sanitize_filename(name):
-    name = re.sub(r"[^a-zA-Z0-9_.]", ".", name)
-    name = re.sub(r"\.+", ".", name)
-    return name
-
-
 def response(url=None, err=None, age=None, afile=None, vfile=None, status=200):
     return web.Response(
         status = status,
@@ -192,6 +186,12 @@ def response(url=None, err=None, age=None, afile=None, vfile=None, status=200):
             allow_unicode = True,
         ),
     )
+
+
+def sanitize_filename(name):
+    name = re.sub(r"[^a-zA-Z0-9_.]", ".", name)
+    #name = re.sub(r"\.+", ".", name)
+    return name
 
 
 def format_duration(seconds):
