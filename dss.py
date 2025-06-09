@@ -170,7 +170,7 @@ def download_video(key, url, vfile, vq):
 
 
 def sanitize_filename(name):
-    name = re.sub(r"[^a-zA-Z0-9.]", ".", name)
+    name = re.sub(r"[^a-zA-Z0-9_.]", ".", name)
     name = re.sub(r"\.+", ".", name)
     return name
 
