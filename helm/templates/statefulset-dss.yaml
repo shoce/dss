@@ -20,11 +20,21 @@ spec:
         app: dss
 
     spec:
+
+      volumes:
+        - name: downloads-dir
+          hostPath:
+            path: /opt/dss/downloads/
+            type: DirectoryOrCreate
+
       containers:
 
         - name: dss
           image: "{{ $.Values.ImageNameGithubDss }}:{{ $.Values.ImageTagGithubDss }}"
           imagePullPolicy: IfNotPresent
+          volumeMounts:
+            - name: downloads-dir
+              mountPath: /opt/dss/downloads/
           ports:
             - containerPort: 80
 
