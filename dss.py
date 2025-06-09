@@ -108,9 +108,6 @@ async def do_download(key, url, afile, aq, vfile, vq):
 async def handle_file(request):
     filename = request.match_info["filename"]
     print(f"DEBUG filename=={filename}")
-    if not re.match(r"^[a-zA-Z0-9_.]+$", filename):
-        print(f"DEBUG filename=={filename} not matching regexp")
-        return web.Response(status=400, text="invalid filename")
     if filename.endswith(".m4a"):
         ctype = "audio/mp4"
     elif filename.endswith(".mp4"):
