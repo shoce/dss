@@ -186,7 +186,7 @@ def response(url=None, err=None, age=None, afile=None, vfile=None, status=200):
 
 
 def sanitize_filename(name):
-    name = re.sub(r"[^a-zA-Z0-9_.]", ".", name)
+    name = re.sub(r"[^a-zA-Z0-9_.-]", ".", name)
     #name = re.sub(r"\.+", ".", name)
     return name
 
