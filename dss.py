@@ -32,8 +32,9 @@ async def handle_post(request):
         return response(err=f"invalid form data: {err}", status=400)
 
     url = data.get("url")
-#    if url:
-#        url = url.removeprefix("http://").removeprefix("https://")
+    if url:
+        url = url.removeprefix("http://").removeprefix("https://")
+        url = "https://" + url
     aq = data.get("aq")
     vq = data.get("vq")
 
@@ -50,7 +51,7 @@ async def handle_post(request):
         vfile = base + f"{vq}..mp4" if vq else None
 
         now = time.time()
-        download_key = f"service={service} video_id={video_id} aq={aq} vq={vq}"
+        download_key = f"service {service} video_id {video_id} aq {aq} vq {vq}"
 
         age = None
         if download_key in download_start_times:
@@ -179,7 +180,7 @@ def response(url=None, err=None, age=None, afile=None, vfile=None, status=200):
                 "v": vfile,
             },
             sort_keys = False,
-            explicit_start = True,
+            explicit_start = False,
             allow_unicode = True,
         ),
     )
