@@ -24,7 +24,7 @@ spec:
       volumes:
         - name: downloads-dir
           hostPath:
-            path: /dss/downloads/
+            path: /opt/dss/downloads/
             type: DirectoryOrCreate
 
       containers:
