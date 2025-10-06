@@ -24,7 +24,7 @@ spec:
       volumes:
         - name: downloads-dir
           hostPath:
-            path: /opt/dss/downloads/
+            path: /dss/downloads/
             type: DirectoryOrCreate
 
       containers:
@@ -34,7 +34,7 @@ spec:
           imagePullPolicy: IfNotPresent
           volumeMounts:
             - name: downloads-dir
-              mountPath: /opt/dss/downloads/
+              mountPath: /dss/downloads/
           ports:
             - containerPort: 80
 
