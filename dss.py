@@ -202,7 +202,7 @@ def response(url=None, err=None, age=None, afile=None, vfile=None, status=200):
     return web.Response(
         status = status,
         content_type = "application/kml",
-        text = f"@err [{err}] @url [{url}] @age [{age}] @a [{afile}] @v [{vfile}]"
+        text = f"@err [{err}] @url [{url}] @age [{age}] @a [{afile}] @v [{vfile}]" + "\n"
     )
 
 
