@@ -1,3 +1,2 @@
 aiohttp
-PyYAML
 yt-dlp
