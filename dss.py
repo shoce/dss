@@ -16,6 +16,7 @@ from aiohttp import web
 import yt_dlp
 
 
+TAB = "\t"
 NL = "\n"
 
 DOWNLOAD_DIR = os.path.abspath("downloads/")
@@ -64,6 +65,11 @@ async def handle_post(request):
     if not url:
         return response(err="missing @url", status=400)
 
+    if not aq:
+        aq = ""
+    if not vq:
+        vq = ""
+
     if not aq and not vq:
         return response(url=url, err="missing both @aq and @vq", status=400)
 
@@ -71,10 +77,11 @@ async def handle_post(request):
     url = "https://" + url
 
     print (
-        f"REQUEST {NL}"
-        f"@url {url} {NL}"
-        f"@aq {aq} {NL}"
-        f"@vq {vq} {NL}"
+        f"REQUEST {{ {NL}"
+        f"{TAB}@url [{url}] {NL}"
+        f"{TAB}@aq [{aq}] {NL}"
+        f"{TAB}@vq [{vq}] {NL}"
+        f"}} "
     )
 
     try:
