@@ -70,6 +70,13 @@ async def handle_post(request):
     url = url.removeprefix("http://").removeprefix("https://")
     url = "https://" + url
 
+    print (
+        f"REQUEST {NL}"
+        f"@url {url} {NL}"
+        f"@aq {aq} {NL}"
+        f"@vq {vq} {NL}"
+    )
+
     try:
         service, video_id = await extract_video_info(url)
         base = sanitize_filename(f"{service}..{video_id}..")
