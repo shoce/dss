@@ -16,6 +16,8 @@ from aiohttp import web
 import yt_dlp
 
 
+NL = "\n"
+
 DOWNLOAD_DIR = os.path.abspath("downloads/")
 os.makedirs(DOWNLOAD_DIR, exist_ok=True)
 
@@ -193,19 +195,25 @@ def download_video(key, url, vfile, vq):
 
 def response(url=None, err=None, age=None, afile=None, vfile=None, status=200):
     if url is None:
-      url = ""
+        url = ""
     if err is None:
-      err = ""
+        err = ""
     if age is None:
-      age = ""
+        age = ""
     if afile is None:
-      afile = ""
+        afile = ""
     if vfile is None:
-      vfile = ""
+        vfile = ""
     return web.Response(
         status = status,
         content_type = "application/kml",
-        text = f"@err [{err}] @url [{url}] @age [{age}] @a [{afile}] @v [{vfile}]" + "\n"
+        text = (
+            f"@err [{err}] {NL}"
+            f"@url [{url}] {NL}"
+            f"@age [{age}] {NL}"
+            f"@a [{afile}] {NL}"
+            f"@v [{vfile}] {NL}"
+        )
     )
 
 
