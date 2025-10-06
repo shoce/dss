@@ -32,28 +32,32 @@ async def handle_post(request):
 
     reqwords = reqtext.split()
     if not reqwords:
-      return response(err="empty request body", status=400)
+        return response(err="empty request body", status=400)
     if len(reqwords) > 6:
-      return response(err="request body has more than three pairs (six words)", status=400)
+        return response(err="request body has more than three pairs (six words)", status=400)
     if len(reqwords)%2 != 0:
-      return response(err="request body has odd number of words", status=400)
+        return response(err="request body has odd number of words", status=400)
+
+    url = None
+    aq = None
+    vq = None
 
     for i in range(0, len(reqwords), 2):
-      k, v = reqwords[i], reqwords[i+1]
-      if not k.startswith("@"):
-        return response(err=f"key [{k}] must start with @", status=400)
-      if len(k) < 2:
-        return response(err=f"key word number {i} name is empty", status=400)
-      k = k[1:]
-      match k:
-        case "url":
-          url = v
-        case "aq":
-          aq = v
-        case "vq":
-          vq = v
-        case _:
-          return response(err=f"invalid key name @{k}", status=400)
+        k, v = reqwords[i], reqwords[i+1]
+        if not k.startswith("@"):
+            return response(err=f"key [{k}] must start with @", status=400)
+        if len(k) < 2:
+            return response(err=f"key word number {i} name is empty", status=400)
+        k = k[1:]
+        match k:
+            case "url":
+                url = v
+            case "aq":
+                aq = v
+            case "vq":
+                vq = v
+            case _:
+                return response(err=f"invalid key name @{k}", status=400)
 
     if not url:
         return response(err="missing @url", status=400)
@@ -61,9 +65,8 @@ async def handle_post(request):
     if not aq and not vq:
         return response(url=url, err="missing both @aq and @vq", status=400)
 
-    if url:
-        url = url.removeprefix("http://").removeprefix("https://")
-        url = "https://" + url
+    url = url.removeprefix("http://").removeprefix("https://")
+    url = "https://" + url
 
     try:
         service, video_id = await extract_video_info(url)
