@@ -41,7 +41,7 @@ async def handle_post(request):
     for i in range(0, len(reqwords), 2):
       k, v = reqwords[i], reqwords[i+1]
       if not k.startswith("@"):
-        return response(err=f"key [{key}] must start with @", status=400)
+        return response(err=f"key [{k}] must start with @", status=400)
       if len(k) < 2:
         return response(err=f"key word number {i} name is empty", status=400)
       k = k[1:]
