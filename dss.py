@@ -8,7 +8,6 @@
 import asyncio
 import os
 import re
-import yaml
 import time
 from collections import defaultdict
 from datetime import datetime, timedelta
@@ -27,22 +26,44 @@ download_locks = defaultdict(asyncio.Lock)
 
 async def handle_post(request):
     try:
-        data = await request.post()
+        reqtext = await request.text()
     except Exception as err:
-        return response(err=f"invalid form data: {err}", status=400)
+        return response(err=f"reading request body {err}", status=400)
 
-    url = data.get("url")
+    reqwords = reqtext.split()
+    if not reqwords:
+      return response(err="empty request body", status=400)
+    if len(reqwords) > 6:
+      return response(err="request body has more than three pairs (six words)", status=400)
+    if len(reqwords)%2 != 0:
+      return response(err="request body has odd number of words", status=400)
+
+    for i in range(0, len(reqwords), 2):
+      k, v = reqwords[i], reqwords[i+1]
+      if not k.startswith("@"):
+        return response(err=f"key [{key}] must start with @", status=400)
+      if len(k) < 2:
+        return response(err=f"key word number {i} name is empty", status=400)
+      k = k[1:]
+      match k:
+        case "url":
+          url = v
+        case "aq":
+          aq = v
+        case "vq":
+          vq = v
+        case _:
+          return response(err=f"invalid key name @{k}", status=400)
+
+    if not url:
+        return response(err="missing @url", status=400)
+
+    if not aq and not vq:
+        return response(url=url, err="missing both @aq and @vq", status=400)
+
     if url:
         url = url.removeprefix("http://").removeprefix("https://")
         url = "https://" + url
-    aq = data.get("aq")
-    vq = data.get("vq")
-
-    if not url:
-        return response(err='missing "url"', status=400)
-
-    if not aq and not vq:
-        return response(url=url, err='missing both "aq" and "vq"', status=400)
 
     try:
         service, video_id = await extract_video_info(url)
@@ -168,21 +189,20 @@ def download_video(key, url, vfile, vq):
 
 
 def response(url=None, err=None, age=None, afile=None, vfile=None, status=200):
+    if url is None:
+      url = ""
+    if err is None:
+      err = ""
+    if age is None:
+      age = ""
+    if afile is None:
+      afile = ""
+    if vfile is None:
+      vfile = ""
     return web.Response(
         status = status,
-        content_type = "application/x-yaml",
-        text = yaml.dump(
-            data = {
-                "err": err,
-                "url": url,
-                "age": age,
-                "a": afile,
-                "v": vfile,
-            },
-            sort_keys = False,
-            explicit_start = False,
-            allow_unicode = True,
-        ),
+        content_type = "application/kml",
+        text = f"@err [{err}] @url [{url}] @age [{age}] @a [{a}] @v [{v}]"
     )
 
 
