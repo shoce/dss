@@ -77,11 +77,12 @@ async def handle_post(request):
     url = "https://" + url
 
     print (
-        f"REQUEST {{ {NL}"
+        f"{NL}"
+        f"request {{ {NL}"
         f"{TAB}@url [{url}] {NL}"
         f"{TAB}@aq [{aq}] {NL}"
         f"{TAB}@vq [{vq}] {NL}"
-        f"}} "
+        f"}} {NL}"
     )
 
     try:
@@ -169,9 +170,9 @@ def download_audio(key, url, afile, aq):
     else:
         format_str = "bestaudio[ext=m4a]"
     opts = {
+        "quiet": False,
         "format": format_str,
         "outtmpl": os.path.join(DOWNLOAD_DIR, afile),
-        "quiet": True,
         "postprocessors": [{
             "key": "FFmpegExtractAudio",
             "preferredcodec": "m4a",
@@ -195,9 +196,9 @@ def download_video(key, url, vfile, vq):
     format_str += "+bestaudio[ext=m4a]"
     print(f"DEBUG download_video format_str=={format_str}")
     opts = {
+        "quiet": False,
         "format": format_str,
         "outtmpl": os.path.join(DOWNLOAD_DIR, vfile),
-        "quiet": True,
         "merge_output_format": "mp4",
     }
     try:
