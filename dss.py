@@ -226,8 +226,8 @@ def response(url=None, err=None, age=None, afile=None, vfile=None, status=200):
             f"@err [{err}] {NL}"
             f"@url [{url}] {NL}"
             f"@age [{age}] {NL}"
-            f"@a [{afile}] {NL}"
-            f"@v [{vfile}] {NL}"
+            f"@afile [{afile}] {NL}"
+            f"@vfile [{vfile}] {NL}"
         )
     )
 
