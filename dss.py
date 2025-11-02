@@ -66,7 +66,7 @@ async def handle_post(request):
         return response(err="missing @url", status=400)
 
     if not aq:
-        aq = ""
+        aq = "max"
     if not vq:
         vq = ""
 
