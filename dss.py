@@ -81,7 +81,7 @@ class DSSHandler(BaseHTTPRequestHandler):
             self.send_response_text("missing @url", status=400)
             return
 
-        if not aq:
+        if not aq and not vq:
             aq = "max"
         if not vq:
             vq = ""
