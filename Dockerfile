@@ -2,7 +2,7 @@
 # https://hub.docker.com/_/python/tags
 FROM python:3-slim
 RUN apt update
-RUN apt install -y --no-install-recommends ffmpeg
+RUN apt install -y --no-install-recommends ffmpeg ca-certificates
 
 WORKDIR /dss/
 COPY dss.py requirements.txt .
