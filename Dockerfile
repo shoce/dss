@@ -13,6 +13,7 @@ RUN curl https://zyedidia.github.io/eget.sh | sh
 RUN mv eget /bin/eget
 RUN eget --asset=deno-aarch64-unknown-linux-gnu denoland/deno
 RUN mv deno /bin/deno
+RUN deno --version
 
 EXPOSE 80
 CMD ["python", "dss.py"]
