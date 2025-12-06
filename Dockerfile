@@ -11,7 +11,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 RUN apt install -y curl
 RUN curl https://zyedidia.github.io/eget.sh | sh
 RUN mv eget /bin/eget
-RUN eget --asset=deno-aarch64-unknown-linux-gnu denoland/deno
+RUN eget --asset=deno- denoland/deno
 RUN mv deno /bin/deno
 RUN deno --version
 
