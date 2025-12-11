@@ -33,7 +33,7 @@ spec:
           image: "{{ $.Values.ImageNameGithubDss }}:{{ $.Values.ImageTagGithubDss }}"
           imagePullPolicy: IfNotPresent
           volumeMounts:
-            - name: downloads
+            - name: dss
               mountPath: /dss/
           ports:
             - containerPort: 80
