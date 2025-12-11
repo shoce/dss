@@ -20,7 +20,7 @@ import yt_dlp
 TAB = "\t"
 NL = "\n"
 
-DOWNLOAD_DIR = os.path.abspath("downloads/")
+DOWNLOAD_DIR = os.path.abspath("./")
 os.makedirs(DOWNLOAD_DIR, exist_ok=True)
 
 download_tasks = {}
