@@ -34,7 +34,7 @@ spec:
           imagePullPolicy: IfNotPresent
           volumeMounts:
             - name: dss
-              mountPath: /dss/
+              mountPath: /dss/downloads/
           ports:
             - containerPort: 80
 
