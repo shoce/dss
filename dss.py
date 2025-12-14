@@ -196,11 +196,11 @@ class DSSHandler(BaseHTTPRequestHandler):
             vfile = ""
 
         body = (
-            f"@err [{err}] {N}"
             f"@url [{url}] {N}"
             f"@age [{age}] {N}"
             f"@afile [{afile}] {N}"
             f"@vfile [{vfile}] {N}"
+            f"@err [{err}] {N}"
             f"{NL}"
         )
 
