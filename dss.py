@@ -205,7 +205,7 @@ class DSSHandler(BaseHTTPRequestHandler):
         )
 
         self.send_response(status)
-        self.send_header('Content-Type', 'application/kml')
+        self.send_header('Content-Type', 'application/aton')
         self.send_header('Content-Length', len(body.encode()))
         self.end_headers()
         self.wfile.write(body.encode())
