@@ -17,8 +17,11 @@ import threading
 import yt_dlp
 
 
+
+SP = " "
 TAB = "\t"
 NL = "\n"
+N = ""
 
 DOWNLOAD_DIR = os.path.abspath("downloads/")
 os.makedirs(DOWNLOAD_DIR, exist_ok=True)
@@ -193,11 +196,12 @@ class DSSHandler(BaseHTTPRequestHandler):
             vfile = ""
 
         body = (
-            f"@err [{err}] {NL}"
-            f"@url [{url}] {NL}"
-            f"@age [{age}] {NL}"
-            f"@afile [{afile}] {NL}"
-            f"@vfile [{vfile}] {NL}"
+            f"@err [{err}] {N}"
+            f"@url [{url}] {N}"
+            f"@age [{age}] {N}"
+            f"@afile [{afile}] {N}"
+            f"@vfile [{vfile}] {N}"
+            f"{NL}"
         )
 
         self.send_response(status)
