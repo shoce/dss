@@ -107,9 +107,12 @@ class DSSHandler(BaseHTTPRequestHandler):
 
         try:
             service, video_id = extract_video_info(url)
-            base = sanitize_filename(f"{service}..{video_id}..")
-            afile = base + f"{aq}..m4a" if aq else None
-            vfile = base + f"{vq}..mp4" if vq else None
+            filename = f"{video_id}.."
+            if service != "Youtube":
+                filename = f"{service}.." + filename
+            filename = sanitize_filename(filename)
+            afile = filename + f"{aq}..m4a" if aq else None
+            vfile = filename + f"{vq}..mp4" if vq else None
 
             now = time.time()
             download_key = f"service {service} video_id {video_id} aq {aq} vq {vq}"
@@ -153,7 +156,7 @@ class DSSHandler(BaseHTTPRequestHandler):
 
     def do_GET(self):
         filename = unquote(self.path.lstrip('/'))
-        print(f"DEBUG filename=={filename}")
+        print(f"DEBUG filename [{filename}]")
 
         if filename.endswith(".m4a"):
             ctype = "audio/mp4"
@@ -163,10 +166,10 @@ class DSSHandler(BaseHTTPRequestHandler):
             ctype = "application/octet-stream"
 
         path = os.path.join(DOWNLOAD_DIR, filename)
-        print(f"DEBUG path=={path}")
+        print(f"DEBUG path [{path}]")
 
         if not os.path.isfile(path):
-            print(f"DEBUG path=={path} file does not exist")
+            print(f"DEBUG path [{path}] file does not exist")
             self.send_error(404, "file not found")
             return
 
@@ -250,7 +253,7 @@ def download_audio(key, url, afile, aq):
     try:
         yt_dlp.YoutubeDL(opts).download([url])
     except Exception as download_err:
-        print(f"download err: {download_err}")
+        print(f"ERROR download_audio {download_err}")
         download_tasks[key]["err"] = download_err
 
 
@@ -262,7 +265,7 @@ def download_video(key, url, vfile, vq):
     else:
         format_str = "bestvideo[vcodec^=avc1]"
     format_str += "+bestaudio[ext=m4a]"
-    print(f"DEBUG download_video format_str=={format_str}")
+    print(f"DEBUG download_video format_str [{format_str}]")
     opts = {
         "quiet": False,
         "format": format_str,
@@ -272,7 +275,7 @@ def download_video(key, url, vfile, vq):
     try:
         yt_dlp.YoutubeDL(opts).download([url])
     except Exception as download_err:
-        print(f"download err: {download_err}")
+        print(f"ERROR download_video {download_err}")
         download_tasks[key]["err"] = download_err
 
 
