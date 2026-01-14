@@ -33,6 +33,7 @@ download_locks = defaultdict(asyncio.Lock)
 
 class DSSHandler(BaseHTTPRequestHandler):
     server_version = "dss/1.0"
+    sys_version = ""
 
     def do_POST(self):
         if self.path != "/":
