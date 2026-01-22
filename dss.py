@@ -121,8 +121,8 @@ class DSSHandler(BaseHTTPRequestHandler):
             if vservice != "Youtube":
                 filename = f"{vservice}.." + filename
             filename = sanitize_filename(filename)
-            afile = filename + f"{aq}..m4a" if aq else None
-            vfile = filename + f"{vq}..mp4" if vq else None
+            afile = filename + "m4a" if aq else None
+            vfile = filename + "mp4" if vq else None
 
             now = time.time()
             download_key = f"service {vservice} id {vid} aq {aq} vq {vq}"
