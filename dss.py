@@ -14,6 +14,7 @@ from http.server import HTTPServer, BaseHTTPRequestHandler
 from urllib.parse import unquote
 import threading
 
+# https://github.com/yt-dlp/yt-dlp
 import yt_dlp
 
 
@@ -107,16 +108,24 @@ class DSSHandler(BaseHTTPRequestHandler):
         )
 
         try:
-            service, video_id = extract_video_info(url)
-            filename = f"{video_id}.."
-            if service != "Youtube":
-                filename = f"{service}.." + filename
+            opts = {"quiet": True}
+            vinfo = yt_dlp.YoutubeDL(opts).extract_info(url, download=False)
+            vid = vinfo.get("id", "nil-id")
+            vdate = vinfo.get("upload_date", "nil-date")
+            filename = f"{vid}..{vdate}.."
+            vtitle = vinfo.get("title", "nil-title").strip()
+            if vtitle:
+                vtitle = vtitle.split(maxsplit=1)[0]
+                filename = filename + f"{vtitle}.."
+            vservice = vinfo.get("extractor_key", "nil-service")
+            if vservice != "Youtube":
+                filename = f"{vservice}.." + filename
             filename = sanitize_filename(filename)
             afile = filename + f"{aq}..m4a" if aq else None
             vfile = filename + f"{vq}..mp4" if vq else None
 
             now = time.time()
-            download_key = f"service {service} video_id {video_id} aq {aq} vq {vq}"
+            download_key = f"service {vservice} id {vid} aq {aq} vq {vq}"
 
             age = None
             if download_key in download_start_times:
@@ -216,16 +225,6 @@ class DSSHandler(BaseHTTPRequestHandler):
 
     def log_message(self, format, *args):
         pass
-
-
-def extract_video_info(url):
-    with yt_dlp.YoutubeDL({'quiet': True}) as ydl:
-        info = ydl.extract_info(url, download=False)
-        service = info.get("extractor_key", "unknown")
-        video_id = info.get("id")
-        if not video_id:
-            raise Exception("Unable to extract video ID")
-        return service, video_id
 
 
 async def do_download(key, url, afile, aq, vfile, vq):
