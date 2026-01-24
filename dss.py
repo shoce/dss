@@ -115,7 +115,7 @@ class DSSHandler(BaseHTTPRequestHandler):
             filename = f"{vid}..{vdate}.."
             vtitle = vinfo.get("title", "nil-title").strip()
             if vtitle:
-                vtitle = vtitle.split(maxsplit=1)[0]
+                vtitle = ".".join(vtitle.split()[:3])
                 filename = filename + f"{vtitle}.."
             vservice = vinfo.get("extractor_key", "nil-service")
             if vservice != "Youtube":
