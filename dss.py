@@ -110,7 +110,17 @@ class DSSHandler(BaseHTTPRequestHandler):
         sys.stdout.flush()
 
         try:
-            opts = {"quiet": True}
+            opts = {
+                "quiet": True,
+                "extractor_args": {
+                    "youtube": {
+                        "player_client": [
+                            "default",
+                            "-android_sdkless",
+                        ],
+                    },
+                },
+            }
             vinfo = yt_dlp.YoutubeDL(opts).extract_info(url, download=False)
             vid = vinfo.get("id", "nil-id")
             vdate = vinfo.get("upload_date", "nil-date")
