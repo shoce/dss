@@ -303,7 +303,7 @@ def main():
     async_thread.start()
 
     server = HTTPServer(('', 80), DSSHandler)
-    print("server running on port 80")
+    print("server listening on :80")
     try:
         server.serve_forever()
     except KeyboardInterrupt:
