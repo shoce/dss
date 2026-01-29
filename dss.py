@@ -106,6 +106,7 @@ class DSSHandler(BaseHTTPRequestHandler):
             f"{TAB}@vq [{vq}] {NL}"
             f"}} {NL}"
         )
+        sys.stdout.flush()
 
         try:
             opts = {"quiet": True}
@@ -167,6 +168,7 @@ class DSSHandler(BaseHTTPRequestHandler):
     def do_GET(self):
         filename = unquote(self.path.lstrip('/'))
         print(f"DEBUG filename [{filename}]")
+        sys.stdout.flush()
 
         if filename.endswith(".m4a"):
             ctype = "audio/mp4"
@@ -177,9 +179,11 @@ class DSSHandler(BaseHTTPRequestHandler):
 
         path = os.path.join(DOWNLOAD_DIR, filename)
         print(f"DEBUG path [{path}]")
+        sys.stdout.flush()
 
         if not os.path.isfile(path):
             print(f"DEBUG path [{path}] file does not exist")
+            sys.stdout.flush()
             self.send_error(404, "file not found")
             return
 
@@ -254,6 +258,7 @@ def download_audio(key, url, afile, aq):
         yt_dlp.YoutubeDL(opts).download([url])
     except Exception as download_err:
         print(f"ERROR download_audio {download_err}")
+        sys.stdout.flush()
         download_tasks[key]["err"] = download_err
 
 
@@ -266,6 +271,7 @@ def download_video(key, url, vfile, vq):
         format_str = "bestvideo[vcodec^=avc1]"
     format_str += "+bestaudio[ext=m4a]"
     print(f"DEBUG download_video format_str [{format_str}]")
+    sys.stdout.flush()
     opts = {
         "quiet": False,
         "format": format_str,
@@ -276,6 +282,7 @@ def download_video(key, url, vfile, vq):
         yt_dlp.YoutubeDL(opts).download([url])
     except Exception as download_err:
         print(f"ERROR download_video {download_err}")
+        sys.stdout.flush()
         download_tasks[key]["err"] = download_err
 
 
@@ -304,10 +311,12 @@ def main():
 
     server = HTTPServer(('', 80), DSSHandler)
     print("server listening on :80")
+    sys.stdout.flush()
     try:
         server.serve_forever()
     except KeyboardInterrupt:
         print(f"{NL}shutting down")
+        sys.stdout.flush()
         server.shutdown()
         loop.stop()
 
