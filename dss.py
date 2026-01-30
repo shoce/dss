@@ -27,14 +27,6 @@ N = ""
 
 YtdlOpts = {
     "quiet": False,
-    "extractor_args": {
-        "youtube": {
-            "player_client": [
-                "default",
-                "-android_sdkless",
-            ],
-        },
-    },
 }
 
 DOWNLOAD_DIR = os.path.abspath("downloads/")
