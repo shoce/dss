@@ -25,6 +25,18 @@ TAB = "\t"
 NL = "\n"
 N = ""
 
+YtdlOpts = {
+    "quiet": False,
+    "extractor_args": {
+        "youtube": {
+            "player_client": [
+                "default",
+                "-android_sdkless",
+            ],
+        },
+    },
+}
+
 DOWNLOAD_DIR = os.path.abspath("downloads/")
 os.makedirs(DOWNLOAD_DIR, exist_ok=True)
 
@@ -110,18 +122,7 @@ class DSSHandler(BaseHTTPRequestHandler):
         sys.stdout.flush()
 
         try:
-            opts = {
-                "quiet": True,
-                "extractor_args": {
-                    "youtube": {
-                        "player_client": [
-                            "default",
-                            "-android_sdkless",
-                        ],
-                    },
-                },
-            }
-            vinfo = yt_dlp.YoutubeDL(opts).extract_info(url, download=False)
+            vinfo = yt_dlp.YoutubeDL(YtdlOpts).extract_info(url, download=False)
             vid = vinfo.get("id", "nil-id")
             vdate = vinfo.get("upload_date", "nil-date")
             filename = f"{vid}..{vdate}.."
@@ -255,7 +256,7 @@ def download_audio(key, url, afile, aq):
         format_str = "worstaudio[ext=m4a]"
     else:
         format_str = "bestaudio[ext=m4a]"
-    opts = {
+    opts = YtdlOpts | {
         "quiet": False,
         "format": format_str,
         "outtmpl": os.path.join(DOWNLOAD_DIR, afile),
@@ -283,7 +284,7 @@ def download_video(key, url, vfile, vq):
     format_str += "+bestaudio[ext=m4a]"
     print(f"DEBUG download_video format_str [{format_str}]")
     sys.stdout.flush()
-    opts = {
+    opts = YtdlOpts | {
         "quiet": False,
         "format": format_str,
         "outtmpl": os.path.join(DOWNLOAD_DIR, vfile),
