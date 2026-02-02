@@ -1,0 +1,24 @@
+---
+
+apiVersion: "gateway.networking.k8s.io/v1"
+kind: "HTTPRoute"
+
+metadata:
+  name: "dss"
+  namespace: "{{ $.Release.Namespace }}"
+
+spec:
+  parentRefs:
+  - name: "traefik-gateway"
+  hostnames:
+  - "dss.localhost"
+  rules:
+  - matches:
+    - path:
+        type: "PathPrefix"
+        value: "/"
+    backendRefs:
+    - name: "dss"
+      port: 80
+
+
