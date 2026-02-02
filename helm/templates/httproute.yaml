@@ -8,11 +8,15 @@ metadata:
   namespace: "{{ $.Release.Namespace }}"
 
 spec:
+
   parentRefs:
   - name: "traefik-gateway"
+
   hostnames:
-  - "dss.localhost"
+  - "dss.local"
+
   rules:
+
   - matches:
     - path:
         type: "PathPrefix"
