@@ -11,17 +11,13 @@ spec:
 
   parentRefs:
   - name: "traefik-gateway"
+    namespace: "traefik"
 
   hostnames:
   - "dss.local"
 
   rules:
-
-  - matches:
-    - path:
-        type: "PathPrefix"
-        value: "/"
-    backendRefs:
+  - backendRefs:
     - name: "dss"
       port: 80
 
