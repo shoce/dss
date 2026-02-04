@@ -25,6 +25,8 @@ TAB = "\t"
 NL = "\n"
 N = ""
 
+TitleWordsN = 4
+
 YtdlOpts = {
     "quiet": False,
 }
@@ -120,7 +122,7 @@ class DSSHandler(BaseHTTPRequestHandler):
             filename = f"{vid}..{vdate}.."
             vtitle = vinfo.get("title", "nil-title").strip()
             if vtitle:
-                vtitle = ".".join(vtitle.split()[:3])
+                vtitle = ".".join(vtitle.split()[:TitleWordsN])
                 filename = filename + f"{vtitle}.."
             vservice = vinfo.get("extractor_key", "nil-service")
             if vservice != "Youtube":
