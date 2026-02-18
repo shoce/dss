@@ -9,5 +9,5 @@ HostPath: "/opt/dss/"
 
 HttpRouteEnable: false
 
-DOWNLOAD_DIR_MAX_SIZE: 40123123123
+DOWNLOAD_DIR_MAX_SIZE: "40123123123"
 
