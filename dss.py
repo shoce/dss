@@ -229,13 +229,14 @@ class DSSHandler(http.server.BaseHTTPRequestHandler):
 
     def send_response_err(self, err, add_headers={}, status=400):
         perr(f"DEBUG send_response_err @status <{status}> @err [{err}]")
+        respbody = f"{err}{NL}".encode()
         self.send_response(status)
         self.send_header("Content-Type", "text/plain")
-        self.send_header("Content-Length", len(err.encode()))
+        self.send_header("Content-Length", len(respbody))
         for hkey, hval in add_headers.items():
             self.send_header(hkey, hval)
         self.end_headers()
-        self.wfile.write(f"{err}{NL}".encode())
+        self.wfile.write(respbody)
 
 
     def log_message(self, format, *args):
