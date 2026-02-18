@@ -15,9 +15,13 @@ YtdlOpts = {
     "js_runtimes": { "deno": { "path": "./deno" } },
 }
 
+def perr(msg):
+    print(f"{msg}", file=sys.stderr, flush=True)
+
 DOWNLOAD_DIR = os.path.abspath("downloads/")
 os.makedirs(DOWNLOAD_DIR, exist_ok=True)
-
+DOWNLOAD_DIR_MAX_SIZE = int(os.getenv("DOWNLOAD_DIR_MAX_SIZE", "4123123123"))
+perr(f"DEBUG @DOWNLOAD_DIR [{DOWNLOAD_DIR}] @DOWNLOAD_DIR_MAX_SIZE <{DOWNLOAD_DIR_MAX_SIZE}>")
 
 class DSSHandler(http.server.BaseHTTPRequestHandler):
     server_version = "dss/1.0"
@@ -157,15 +161,40 @@ class DSSHandler(http.server.BaseHTTPRequestHandler):
                 return
 
             try:
-                with open(path, "rb") as f:
+                with open(filepath, "rb") as f:
                     self.send_response(200)
                     self.send_header("Content-Type", ctype)
                     self.send_header("Content-Length", clength)
                     self.end_headers()
-                    self.wfile.write(f.read())
+                    while True:
+                        fchunk = f.read(128 * 1024)
+                        if not fchunk:
+                            break
+                        self.wfile.write(fchunk)
             except Exception as err:
                 self.send_response_err(f"ERROR serve file {err}", status=500)
                 return
+
+            ff = []
+            ffsize = 0
+            for f in os.scandir(DOWNLOAD_DIR):
+                if f.is_file():
+                    fstat = f.stat()
+                    ff.append((f.name, fstat.st_size, fstat.st_mtime))
+                    ffsize += fstat.st_size
+            perr(f"DEBUG @DOWNLOAD_DIR [{DOWNLOAD_DIR}] total files size <{ffsize}>")
+            if ffsize > DOWNLOAD_DIR_MAX_SIZE:
+                ff.sort(key=lambda x: x[2])
+                for f in ff:
+                    fpath = os.path.join(DOWNLOAD_DIR, f[0])
+                    perr(f"DEBUG delete @path [{fpath}] @size <{f[1]}> @mtime <{f[2]}>")
+                    try:
+                        os.remove(fpath)
+                    except OSError as err:
+                        perr(f"ERROR delete @path [{fpath}] {err}")
+                    ffsize -= f[1]
+                    if ffsize < DOWNLOAD_DIR_MAX_SIZE:
+                        break
 
         else:
 
@@ -199,9 +228,6 @@ def sanitize_filename(name):
     name = re.sub(r"[^a-zA-Z0-9_.-]", ".", name)
     name = re.sub(r"\.\.+", "..", name)
     return name
-
-def perr(msg):
-    print(f"{msg}", file=sys.stderr, flush=True)
 
 def main():
     server = http.server.HTTPServer(("", 80), DSSHandler)

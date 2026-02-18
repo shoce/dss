@@ -37,5 +37,8 @@ spec:
           volumeMounts:
             - name: "dss"
               mountPath: "/dss/downloads/"
+          env:
+            - name: "DOWNLOAD_DIR_MAX_SIZE"
+              value: "{{ $.Values.DOWNLOAD_DIR_MAX_SIZE }}"
 
 
