@@ -44,6 +44,16 @@ class DSSHandler(http.server.BaseHTTPRequestHandler):
     sys_version = ""
 
 
+    def do_POST(self):
+            self.send_response_err("GET method only", status=405)
+
+    def do_PUT(self):
+            self.send_response_err("GET method only", status=405)
+
+    def do_DELETE(self):
+            self.send_response_err("GET method only", status=405)
+
+
     def do_GET(self):
 
         path = urllib.parse.urlparse(self.path).path
