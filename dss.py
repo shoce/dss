@@ -190,7 +190,7 @@ class DSSHandler(http.server.BaseHTTPRequestHandler):
         for hkey, hval in add_headers.items():
             self.send_header(hkey, hval)
         self.end_headers()
-        self.wfile.write(err.encode())
+        self.wfile.write(f"{err}{NL}".encode())
 
 
     def log_message(self, format, *args):
