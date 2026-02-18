@@ -6,7 +6,7 @@ RUN apt install -y --no-install-recommends ffmpeg ca-certificates
 
 WORKDIR /dss/
 COPY dss.py requirements.txt .
-RUN pip install --target ./vendor --no-compile --no-cache-dir -r requirements.txt
+RUN pip install --target ./vendor --no-cache-dir -r requirements.txt
 
 RUN apt install -y --no-install-recommends curl
 RUN curl https://zyedidia.github.io/eget.sh | sh
