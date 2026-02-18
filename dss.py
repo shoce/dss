@@ -44,7 +44,7 @@ class DSSHandler(http.server.BaseHTTPRequestHandler):
     sys_version = ""
 
 
-    def GET_method_only(self): self.send_response_err("GET method only", add_headers=dict(Allow="GET"), status=405)
+    def GET_method_only(self): self.send_response_err(f"GET method only", add_headers=dict(Allow="GET"), status=405)
     def do_POST(self): self.GET_method_only()
     def do_PUT(self): self.GET_method_only()
     def do_DELETE(self): self.GET_method_only()
@@ -54,21 +54,24 @@ class DSSHandler(http.server.BaseHTTPRequestHandler):
 
     def do_HEAD(self):
 
-        filename = urllib.parse.unquote(self.path.lstrip('/'))
+        filename = urllib.parse.unquote(self.path.lstrip("/"))
         perr(f"DEBUG HEAD filename [{filename}]")
+        if "/" in filename:
+            self.send_response_err(f"ERROR haha nice try", status=404)
+            return
 
         path = os.path.join(DOWNLOAD_DIR, filename)
         perr(f"DEBUG path [{path}]")
 
         if not os.path.isfile(path):
             perr(f"DEBUG path [{path}] file does not exist")
-            self.send_error(404, "ERROR file not found")
+            self.send_response_err(f"ERROR file not found", status=404)
             return
 
         try:
             clength = os.path.getsize(path)
         except Exception as err:
-            self.send_error(500, f"ERROR get file size {err}")
+            self.send_response_err(f"ERROR get file size {err}", status=500)
             return
 
         if filename.endswith(".m4a"):
@@ -101,7 +104,7 @@ class DSSHandler(http.server.BaseHTTPRequestHandler):
 
         url = params.get("url", [None])[-1]
         if not url:
-            self.send_response_err("missing @url", status=400)
+            self.send_response_err(f"missing @url", status=400)
             return
         url = url.removeprefix("http://").removeprefix("https://")
         url = "https://" + url
@@ -116,7 +119,7 @@ class DSSHandler(http.server.BaseHTTPRequestHandler):
         perr(f"@request {{ @url [{url}] @aq [{aq}] @vq [{vq}] }}")
 
         if not aq and not vq:
-            self.send_response_err("missing both @aq and @vq", status=400)
+            self.send_response_err(f"both @aq and @vq missing", status=400)
             return
 
         try:
@@ -169,7 +172,7 @@ class DSSHandler(http.server.BaseHTTPRequestHandler):
                 self.send_response_redirect(f"/{afile}")
                 return
 
-            self.send_response_err(f"ERROR both audio_ready and video_ready is false", status=202)
+            self.send_response_err(f"ERROR both audio and video files are missing", status=202)
             return
 
         except Exception as err:
@@ -185,21 +188,24 @@ class DSSHandler(http.server.BaseHTTPRequestHandler):
 
     def do_GET_file(self):
 
-        filename = urllib.parse.unquote(self.path.lstrip('/'))
+        filename = urllib.parse.unquote(self.path.lstrip("/"))
         perr(f"DEBUG filename [{filename}]")
+        if "/" in filename:
+            self.send_response_err(f"ERROR haha nice try", status=404)
+            return
 
         path = os.path.join(DOWNLOAD_DIR, filename)
         perr(f"DEBUG path [{path}]")
 
         if not os.path.isfile(path):
             perr(f"DEBUG path [{path}] file does not exist")
-            self.send_error(404, "ERROR file not found")
+            self.send_response_err(f"ERROR file not found", status=404)
             return
 
         try:
             clength = os.path.getsize(path)
         except Exception as err:
-            self.send_error(500, f"ERROR get file size {err}")
+            self.send_response_err(f"ERROR get file size {err}", status=500)
             return
 
         if filename.endswith(".m4a"):
@@ -217,7 +223,7 @@ class DSSHandler(http.server.BaseHTTPRequestHandler):
                 self.end_headers()
                 self.wfile.write(f.read())
         except Exception as err:
-            self.send_error(500, f"ERROR reading file {err}")
+            self.send_response_err(f"ERROR reading file {err}", status=500)
             return
 
 
