@@ -44,14 +44,10 @@ class DSSHandler(http.server.BaseHTTPRequestHandler):
     sys_version = ""
 
 
-    def do_POST(self):
-            self.send_response_err("GET method only", status=405)
-
-    def do_PUT(self):
-            self.send_response_err("GET method only", status=405)
-
-    def do_DELETE(self):
-            self.send_response_err("GET method only", status=405)
+    def GET_method_only(self): self.send_response_err("GET method only", add_headers=dict(Allow="GET"), status=405)
+    def do_POST(self): self.GET_method_only()
+    def do_PUT(self): self.GET_method_only()
+    def do_DELETE(self): self.GET_method_only()
 
 
     def do_GET(self):
@@ -183,10 +179,12 @@ class DSSHandler(http.server.BaseHTTPRequestHandler):
             self.send_error(500, f"ERROR reading file {err}")
 
 
-    def send_response_err(self, err, status=400):
+    def send_response_err(self, err, add_headers={}, status=400):
         self.send_response(status)
         self.send_header("Content-Type", "text/plain")
         self.send_header("Content-Length", len(err.encode()))
+        for hkey, hval in add_headers.items():
+            self.send_header(hkey, hval)
         self.end_headers()
         self.wfile.write(err.encode())
 
