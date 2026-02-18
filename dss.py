@@ -54,11 +54,10 @@ class DSSHandler(http.server.BaseHTTPRequestHandler):
             filename = f"{vid}..{vdate}.."
             vtitle = vinfo.get("title", "nil-title").strip()
             vtitle = ".".join(vtitle.split()[:TitleWordsN])
-            filename = filename + f"{vtitle}.."
+            filename = filename + sanitize_filename(vtitle) + ".."
             vservice = vinfo.get("extractor_key", "nil-service")
             if vservice != "Youtube":
                 filename = f"{vservice}.." + filename
-            filename = sanitize_filename(filename)
 
             if path.startswith("/audio/"):
                 filename = filename + "m4a"
@@ -229,9 +228,9 @@ def sanitize_filename(name):
     perr(f"DEBUG sanitize_filename @name [{name}]")
     name = unidecode.unidecode(name)
     perr(f"DEBUG sanitize_filename @name [{name}]")
-    name = re.sub(r"[^a-zA-Z0-9_.-]", ".", name)
+    name = re.sub(r"[^a-zA-Z0-9.]", ".", name)
     perr(f"DEBUG sanitize_filename @name [{name}]")
-    name = re.sub(r"\.\.+", "..", name)
+    name = re.sub(r"\.+", ".", name)
     perr(f"DEBUG sanitize_filename @name [{name}]")
     return name
 
