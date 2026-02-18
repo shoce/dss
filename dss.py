@@ -45,9 +45,12 @@ class DSSHandler(http.server.BaseHTTPRequestHandler):
 
 
     def GET_method_only(self): self.send_response_err("GET method only", add_headers=dict(Allow="GET"), status=405)
+    def do_HEAD(self): self.GET_method_only()
     def do_POST(self): self.GET_method_only()
     def do_PUT(self): self.GET_method_only()
     def do_DELETE(self): self.GET_method_only()
+    def do_PATCH(self): self.GET_method_only()
+    def do_OPTIONS(self): self.GET_method_only()
 
 
     def do_GET(self):
