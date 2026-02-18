@@ -183,6 +183,7 @@ class DSSHandler(http.server.BaseHTTPRequestHandler):
 
 
     def send_response_err(self, err, add_headers={}, status=400):
+        perr(f"DEBUG send_response_err @status <{status}> @err [{err}]")
         self.send_response(status)
         self.send_header("Content-Type", "text/plain")
         self.send_header("Content-Length", len(err.encode()))
