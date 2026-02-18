@@ -6,14 +6,13 @@ RUN apt install -y --no-install-recommends ffmpeg ca-certificates
 
 WORKDIR /dss/
 COPY dss.py requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --target ./vendor --no-compile --no-cache-dir -r requirements.txt
 
 RUN apt install -y --no-install-recommends curl
 RUN curl https://zyedidia.github.io/eget.sh | sh
 RUN mv eget /bin/eget
 RUN eget --asset=deno- denoland/deno
-RUN mv deno /bin/deno
-RUN deno --version
+RUN ./deno --version
 
 RUN apt clean
 RUN rm -rf /var/lib/apt/lists/*

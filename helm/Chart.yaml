@@ -1,7 +1,7 @@
-apiVersion: v2
-name: helm.dss
-description: download service server
-type: application
-version: __VERSION__
-home: https://github.com/shoce/dss/tree/main/helm/
+apiVersion: "v2"
+name: "helm.dss"
+description: "download service server"
+type: "application"
+version: "__VERSION__"
+home: "https://github.com/shoce/dss/tree/main/helm/"
 

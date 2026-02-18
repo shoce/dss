@@ -1,41 +1,41 @@
 ---
 
-apiVersion: apps/v1
-kind: StatefulSet
+apiVersion: "apps/v1"
+kind: "StatefulSet"
 
 metadata:
-  name: dss
-  namespace: {{ $.Release.Namespace }}
+  name: "dss"
+  namespace: "{{ $.Release.Namespace }}"
   labels:
-    app: dss
+    app: "dss"
 
 spec:
   selector:
     matchLabels:
-      app: dss
+      app: "dss"
   template:
     metadata:
-      name: dss
+      name: "dss"
       labels:
-        app: dss
+        app: "dss"
 
     spec:
 
       volumes:
-        - name: dss
+        - name: "dss"
           hostPath:
-            path: /opt/dss/
-            type: DirectoryOrCreate
+            path: "{{ $.Values.HostPath }}"
+            type: "DirectoryOrCreate"
 
       containers:
 
-        - name: dss
+        - name: "dss"
           image: "{{ $.Values.ImageNameGithubDss }}:{{ $.Values.ImageTagGithubDss }}"
-          imagePullPolicy: IfNotPresent
+          imagePullPolicy: "IfNotPresent"
           ports:
             - containerPort: 80
           volumeMounts:
-            - name: dss
-              mountPath: /dss/downloads/
+            - name: "dss"
+              mountPath: "/dss/downloads/"
 
 

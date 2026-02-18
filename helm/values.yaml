@@ -2,7 +2,9 @@
 
 DEBUG: false
 
-ImageNameGithubDss: ghcr.io/shoce/dss
+ImageNameGithubDss: "ghcr.io/shoce/dss"
 ImageTagGithubDss: ""
+
+HostPath: "/opt/dss/"
 
 
