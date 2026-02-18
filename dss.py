@@ -1,7 +1,5 @@
 #
 # python3 -m py_compile dss.py
-# python3 -m compileall dss.py
-# pylint dss.py
 #
 
 import sys
@@ -52,24 +50,23 @@ class DSSHandler(http.server.BaseHTTPRequestHandler):
     def do_OPTIONS(self): self.GET_method_only()
 
 
-    def do_HEAD(self):
+    def do_HEAD(self, filename):
 
-        filename = urllib.parse.unquote(self.path.lstrip("/"))
         perr(f"DEBUG HEAD filename [{filename}]")
         if "/" in filename:
-            self.send_response_err(f"ERROR haha nice try", status=404)
+            self.send_response_err(f"HAHA nice try", status=404)
             return
 
-        path = os.path.join(DOWNLOAD_DIR, filename)
-        perr(f"DEBUG path [{path}]")
+        filepath = os.path.join(DOWNLOAD_DIR, filename)
+        perr(f"DEBUG filepath [{filepath}]")
 
-        if not os.path.isfile(path):
-            perr(f"DEBUG path [{path}] file does not exist")
+        if not os.path.isfile(filepath):
+            perr(f"DEBUG path [{filepath}] file not found")
             self.send_response_err(f"ERROR file not found", status=404)
             return
 
         try:
-            clength = os.path.getsize(path)
+            clength = os.path.getsize(filepath)
         except Exception as err:
             self.send_response_err(f"ERROR get file size {err}", status=500)
             return
@@ -79,7 +76,8 @@ class DSSHandler(http.server.BaseHTTPRequestHandler):
         elif filename.endswith(".mp4"):
             ctype = "video/mp4"
         else:
-            ctype = "application/octet-stream"
+            self.send_response_err(f"ERROR invalid file suffix", status=400)
+            return
 
         self.send_response(200)
         self.send_header("Content-Type", ctype)
@@ -92,120 +90,168 @@ class DSSHandler(http.server.BaseHTTPRequestHandler):
         path = urllib.parse.urlparse(self.path).path
         perr(f"DEBUG GET path [{path}]")
 
-        if path == "/":
-            self.do_GET_url()
+        if path.startswith("/audio/"):
+            self.do_GET_audio(path.removeprefix("/audio/"))
+        elif path.startswith("/video/"):
+            self.do_GET_video(path.removeprefix("/video/"))
+        elif path.startswith("/thumb/"):
+            self.do_GET_thumb(path.removeprefix("/thumb/"))
+        elif path.startswith("/file/"):
+            self.do_GET_file(path.removeprefix("/file/"))
         else:
-            self.do_GET_file()
+            self.send_response_err(f"ERROR invalid path prefix", status=400)
 
 
-    def do_GET_url(self):
+    def do_GET_audio(self, url):
 
-        params = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query)
-
-        url = params.get("url", [None])[-1]
         if not url:
-            self.send_response_err(f"missing @url", status=400)
-            return
-        url = url.removeprefix("http://").removeprefix("https://")
+           self.send_response_err(f"ERROR missing url", status=400)
+           return
         url = "https://" + url
-
-        aq = params.get("aq", [None])[-1]
-        vq = params.get("vq", [None])[-1]
-        if not aq and not vq:
-            aq = "max"
-        if not vq:
-            vq = ""
-
-        perr(f"@request {{ @url [{url}] @aq [{aq}] @vq [{vq}] }}")
-
-        if not aq and not vq:
-            self.send_response_err(f"both @aq and @vq missing", status=400)
-            return
+        perr(f"DEBUG @url [{url}]")
 
         try:
             vinfo = yt_dlp.YoutubeDL(YtdlOpts).extract_info(url, download=False)
+
             vid = vinfo.get("id", "nil-id")
             vdate = vinfo.get("upload_date", "nil-date")
+            perr(f"DEBUG @vid [{vid}] @vdate [{vdate}]")
 
             filename = f"{vid}..{vdate}.."
+
             vtitle = vinfo.get("title", "nil-title").strip()
             if vtitle:
                 vtitle = ".".join(vtitle.split()[:TitleWordsN])
                 filename = filename + f"{vtitle}.."
+
             vservice = vinfo.get("extractor_key", "nil-service")
             if vservice != "Youtube":
                 filename = f"{vservice}.." + filename
-            filename = sanitize_filename(filename)
 
-            afile = filename + "m4a" if aq else None
-            vfile = filename + "mp4" if vq else None
-            perr(f"DEBUG @afile [{afile}] @vfile [{vfile}]")
+            filename = sanitize_filename(filename) + "m4a"
+            perr(f"DEBUG @filename [{filename}]")
+            filepath = os.path.join(DOWNLOAD_DIR, filename)
+            perr(f"DEBUG @filepath [{filepath}]")
 
-            audio_path = os.path.join(DOWNLOAD_DIR, afile) if afile else None
-            video_path = os.path.join(DOWNLOAD_DIR, vfile) if vfile else None
-            perr(f"DEBUG @audio_path [{audio_path}] @video_path [{video_path}]")
-
-            if video_path and os.path.isfile(video_path):
-                self.send_response_redirect(f"/{vfile}")
-                return
-            if audio_path and os.path.isfile(audio_path):
-                self.send_response_redirect(f"/{afile}")
+            if os.path.isfile(filepath):
+                self.send_response_redirect(f"/file/{filename}")
                 return
 
             #yt_dlp.YoutubeDL({"listformats": True}).download([url])
 
-            download_err = None
-            if vfile:
-                download_err = download_video(url, vfile, vq)
-            if afile:
-                download_err = download_audio(url, afile, aq)
-
+            download_err = download_audio(url, filename)
             if download_err:
                 perr(f"ERROR {download_err}")
                 self.send_response_err(f"{download_err}", status=500)
                 return
 
-            if video_path and os.path.isfile(video_path):
-                self.send_response_redirect(f"/{vfile}")
-                return
-            if audio_path and os.path.isfile(audio_path):
-                self.send_response_redirect(f"/{afile}")
-                return
-
-            self.send_response_err(f"ERROR both audio and video files are missing", status=202)
-            return
+            if os.path.isfile(filepath):
+                self.send_response_redirect(f"/file/{filename}")
+            else:
+                self.send_response_err(f"ERROR file [{filename}] not found", status=500)
 
         except Exception as err:
             self.send_response_err(f"{err}", status=500)
             return
 
 
-    def send_response_redirect(self, filepath, status=302):
+    def do_GET_video(self, url):
+
+        if not url:
+           self.send_response_err(f"ERROR missing url", status=400)
+           return
+        url = "https://" + url
+        perr(f"DEBUG @url [{url}]")
+
+        try:
+            vinfo = yt_dlp.YoutubeDL(YtdlOpts).extract_info(url, download=False)
+
+            vid = vinfo.get("id", "nil-id")
+            vdate = vinfo.get("upload_date", "nil-date")
+            perr(f"DEBUG @vid [{vid}] @vdate [{vdate}]")
+
+            filename = f"{vid}..{vdate}.."
+
+            vtitle = vinfo.get("title", "nil-title").strip()
+            if vtitle:
+                vtitle = ".".join(vtitle.split()[:TitleWordsN])
+                filename = filename + f"{vtitle}.."
+
+            vservice = vinfo.get("extractor_key", "nil-service")
+            if vservice != "Youtube":
+                filename = f"{vservice}.." + filename
+
+            filename = sanitize_filename(filename) + "mp4"
+            perr(f"DEBUG @filename [{filename}]")
+            filepath = os.path.join(DOWNLOAD_DIR, filename)
+            perr(f"DEBUG @filepath [{filepath}]")
+
+            if os.path.isfile(filepath):
+                self.send_response_redirect(f"/file/{filename}")
+                return
+
+            #yt_dlp.YoutubeDL({"listformats": True}).download([url])
+
+            download_err = download_video(url, filename)
+            if download_err:
+                perr(f"ERROR {download_err}")
+                self.send_response_err(f"{download_err}", status=500)
+                return
+
+            if os.path.isfile(filepath):
+                self.send_response_redirect(f"/file/{filename}")
+            else:
+                self.send_response_err(f"ERROR file [{filename}] not found", status=500)
+
+        except Exception as err:
+            self.send_response_err(f"{err}", status=500)
+            return
+
+
+    def do_GET_thumb(self, url):
+
+        if not url:
+           self.send_response_err(f"ERROR missing url", status=400)
+           return
+        url = "https://" + url
+        perr(f"DEBUG @url [{url}]")
+
+        try:
+            vinfo = yt_dlp.YoutubeDL(YtdlOpts).extract_info(url, download=False)
+
+            vthumburl = ""
+            vthumbwidth = 0
+            for vt in vinfo.get("thumbnails", []):
+                vtu = vt.get("url", "")
+                if not vtu.endswith(".jpg"):
+                    continue
+                vtw = vt.get("width", 0)
+                if vtw > vthumbwidth:
+                    vthumburl = vtu
+                    vthumbwidth = vtw
+            perr(f"DEBUG @vthumburl [{vthumburl}] @vthumbwidth <{vthumbwidth}>")
+
+            if not vthumburl:
+                self.send_response_err(f"ERROR vthumburl empty", status=500)
+                return
+
+            self.send_response_redirect(vthumburl)
+
+        except Exception as err:
+            self.send_response_err(f"{err}", status=500)
+            return
+
+
+    def send_response_redirect(self, location, status=302):
         self.send_response(status)
-        self.send_header("Location", filepath)
+        self.send_header("Location", location)
         self.end_headers()
 
 
-    def do_GET_file(self):
+    def do_GET_file(self, filename):
 
-        filename = urllib.parse.unquote(self.path.lstrip("/"))
-        perr(f"DEBUG filename [{filename}]")
         if "/" in filename:
-            self.send_response_err(f"ERROR haha nice try", status=404)
-            return
-
-        path = os.path.join(DOWNLOAD_DIR, filename)
-        perr(f"DEBUG path [{path}]")
-
-        if not os.path.isfile(path):
-            perr(f"DEBUG path [{path}] file does not exist")
-            self.send_response_err(f"ERROR file not found", status=404)
-            return
-
-        try:
-            clength = os.path.getsize(path)
-        except Exception as err:
-            self.send_response_err(f"ERROR get file size {err}", status=500)
+            self.send_response_err(f"HAHA nice try", status=404)
             return
 
         if filename.endswith(".m4a"):
@@ -213,7 +259,21 @@ class DSSHandler(http.server.BaseHTTPRequestHandler):
         elif filename.endswith(".mp4"):
             ctype = "video/mp4"
         else:
-            ctype = "application/octet-stream"
+            self.send_response_err(f"ERROR invalid file suffix", status=400)
+            return
+
+        filepath = os.path.join(DOWNLOAD_DIR, filename)
+        perr(f"DEBUG path [{filepath}]")
+
+        if not os.path.isfile(filepath):
+            self.send_response_err(f"ERROR file not found", status=404)
+            return
+
+        try:
+            clength = os.path.getsize(filepath)
+        except Exception as err:
+            self.send_response_err(f"ERROR get file size {err}", status=500)
+            return
 
         try:
             with open(path, "rb") as f:
@@ -223,7 +283,7 @@ class DSSHandler(http.server.BaseHTTPRequestHandler):
                 self.end_headers()
                 self.wfile.write(f.read())
         except Exception as err:
-            self.send_response_err(f"ERROR reading file {err}", status=500)
+            self.send_response_err(f"ERROR read file {err}", status=500)
             return
 
 
@@ -243,15 +303,11 @@ class DSSHandler(http.server.BaseHTTPRequestHandler):
         pass
 
 
-def download_audio(url, afile, aq):
-    if aq == "min":
-        format_str = "worstaudio[ext=m4a]"
-    else:
-        format_str = "bestaudio[ext=m4a]"
+def download_audio(url, filename):
     opts = YtdlOpts | {
         "quiet": False,
-        "format": format_str,
-        "outtmpl": os.path.join(DOWNLOAD_DIR, afile),
+        "format": "bestaudio[ext=m4a]",
+        "outtmpl": os.path.join(DOWNLOAD_DIR, filename),
         "postprocessors": [{
             "key": "FFmpegExtractAudio",
             "preferredcodec": "m4a",
@@ -264,19 +320,11 @@ def download_audio(url, afile, aq):
         return download_err
 
 
-def download_video(url, vfile, vq):
-    if vq == "min":
-        format_str = "worstvideo[vcodec^=avc1]"
-    elif vq == "avg":
-        format_str = "bestvideo[vcodec^=avc1][height<=720][fps<=30]"
-    else:
-        format_str = "bestvideo[vcodec^=avc1]"
-    format_str += "+bestaudio[ext=m4a]"
-    perr(f"DEBUG download_video format_str [{format_str}]")
+def download_video(url, filename):
     opts = YtdlOpts | {
         "quiet": False,
-        "format": format_str,
-        "outtmpl": os.path.join(DOWNLOAD_DIR, vfile),
+        "format": "bestvideo[vcodec^=avc1]+bestaudio[ext=m4a]",
+        "outtmpl": os.path.join(DOWNLOAD_DIR, filename),
         "merge_output_format": "mp4",
     }
     try:
