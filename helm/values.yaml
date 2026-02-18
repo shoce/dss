@@ -7,4 +7,5 @@ ImageTagGithubDss: ""
 
 HostPath: "/opt/dss/"
 
+HttpRouteEnable: false
 
