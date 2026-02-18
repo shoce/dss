@@ -19,10 +19,10 @@ YtdlOpts = {
 def perr(msg):
     print(f"{msg}", file=sys.stderr, flush=True)
 
-DOWNLOAD_DIR = os.path.abspath("downloads/")
-os.makedirs(DOWNLOAD_DIR, exist_ok=True)
-DOWNLOAD_DIR_MAX_SIZE = int(os.getenv("DOWNLOAD_DIR_MAX_SIZE", "4123123123"))
-perr(f"DEBUG @DOWNLOAD_DIR [{DOWNLOAD_DIR}] @DOWNLOAD_DIR_MAX_SIZE <{DOWNLOAD_DIR_MAX_SIZE}>")
+DOWNLOADS_DIR = os.path.abspath("downloads/")
+os.makedirs(DOWNLOADS_DIR, exist_ok=True)
+DOWNLOADS_DIR_MAX_SIZE = int(os.getenv("DOWNLOADS_DIR_MAX_SIZE", "4123123123"))
+perr(f"DEBUG @DOWNLOADS_DIR [{DOWNLOADS_DIR}] @DOWNLOADS_DIR_MAX_SIZE <{DOWNLOADS_DIR_MAX_SIZE}>")
 
 class DSSHandler(http.server.BaseHTTPRequestHandler):
     server_version = "dss/1.0"
@@ -65,10 +65,10 @@ class DSSHandler(http.server.BaseHTTPRequestHandler):
                 filename = filename + "mp4"
             elif path.startswith("/thumb/"):
                 filename = filename + "jpg"
-            filepath = os.path.join(DOWNLOAD_DIR, filename)
+            filepath = os.path.join(DOWNLOADS_DIR, filename)
             perr(f"DEBUG @filename [{filename}] @filepath [{filepath}]")
             if os.path.isfile(filepath):
-                self.send_response_redirect(f"/file/{filename}")
+                self.send_response_redirect(f"/downloads/{filename}")
                 return
 
 
@@ -76,7 +76,7 @@ class DSSHandler(http.server.BaseHTTPRequestHandler):
 
             ytdlopts = YtdlOpts | {
                 "format": "bestaudio[ext=m4a]",
-                "outtmpl": os.path.join(DOWNLOAD_DIR, filename),
+                "outtmpl": os.path.join(DOWNLOADS_DIR, filename),
                 "postprocessors": [{
                     "key": "FFmpegExtractAudio",
                     "preferredcodec": "m4a",
@@ -90,7 +90,7 @@ class DSSHandler(http.server.BaseHTTPRequestHandler):
                 return
 
             if os.path.isfile(filepath):
-                self.send_response_redirect(f"/file/{filename}")
+                self.send_response_redirect(f"/downloads/{filename}")
             else:
                 self.send_response_err(f"ERROR file [{filename}] not found", status=500)
 
@@ -98,7 +98,7 @@ class DSSHandler(http.server.BaseHTTPRequestHandler):
 
             ytdlopts = YtdlOpts | {
                 "format": "bestvideo[vcodec^=avc1]+bestaudio[ext=m4a]",
-                "outtmpl": os.path.join(DOWNLOAD_DIR, filename),
+                "outtmpl": os.path.join(DOWNLOADS_DIR, filename),
                 "merge_output_format": "mp4",
             }
             try:
@@ -108,7 +108,7 @@ class DSSHandler(http.server.BaseHTTPRequestHandler):
                 return
 
             if os.path.isfile(filepath):
-                self.send_response_redirect(f"/file/{filename}")
+                self.send_response_redirect(f"/downloads/{filename}")
             else:
                 self.send_response_err(f"ERROR file [{filename}] not found", status=500)
 
@@ -132,9 +132,9 @@ class DSSHandler(http.server.BaseHTTPRequestHandler):
 
             self.send_response_redirect(vthumburl)
 
-        elif path.startswith("/file/"):
+        elif path.startswith("/downloads/"):
 
-            filename = path.removeprefix("/file/")
+            filename = path.removeprefix("/downloads/")
             if "/" in filename:
                 self.send_response_err(f"HAHA nice try", status=404)
                 return
@@ -147,7 +147,7 @@ class DSSHandler(http.server.BaseHTTPRequestHandler):
                 self.send_response_err(f"ERROR invalid file suffix", status=400)
                 return
 
-            filepath = os.path.join(DOWNLOAD_DIR, filename)
+            filepath = os.path.join(DOWNLOADS_DIR, filename)
             perr(f"DEBUG path [{filepath}]")
 
             if not os.path.isfile(filepath):
@@ -177,23 +177,23 @@ class DSSHandler(http.server.BaseHTTPRequestHandler):
 
             ff = []
             ffsize = 0
-            for f in os.scandir(DOWNLOAD_DIR):
+            for f in os.scandir(DOWNLOADS_DIR):
                 if f.is_file():
                     fstat = f.stat()
                     ff.append((f.name, fstat.st_size, fstat.st_mtime))
                     ffsize += fstat.st_size
-            perr(f"DEBUG @DOWNLOAD_DIR [{DOWNLOAD_DIR}] total files size <{ffsize}>")
-            if ffsize > DOWNLOAD_DIR_MAX_SIZE:
+            perr(f"DEBUG @DOWNLOADS_DIR [{DOWNLOADS_DIR}] total files size <{ffsize}>")
+            if ffsize > DOWNLOADS_DIR_MAX_SIZE:
                 ff.sort(key=lambda x: x[2])
                 for f in ff:
-                    fpath = os.path.join(DOWNLOAD_DIR, f[0])
+                    fpath = os.path.join(DOWNLOADS_DIR, f[0])
                     perr(f"DEBUG delete @path [{fpath}] @size <{f[1]}> @mtime <{f[2]}>")
                     try:
                         os.remove(fpath)
                     except OSError as err:
                         perr(f"ERROR delete @path [{fpath}] {err}")
                     ffsize -= f[1]
-                    if ffsize < DOWNLOAD_DIR_MAX_SIZE:
+                    if ffsize < DOWNLOADS_DIR_MAX_SIZE:
                         break
 
         else:
