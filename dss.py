@@ -83,6 +83,7 @@ class DSSHandler(http.server.BaseHTTPRequestHandler):
             vinfo = yt_dlp.YoutubeDL(YtdlOpts).extract_info(url, download=False)
             vid = vinfo.get("id", "nil-id")
             vdate = vinfo.get("upload_date", "nil-date")
+
             filename = f"{vid}..{vdate}.."
             vtitle = vinfo.get("title", "nil-title").strip()
             if vtitle:
@@ -97,6 +98,17 @@ class DSSHandler(http.server.BaseHTTPRequestHandler):
             vfile = filename + "mp4" if vq else None
             perr(f"DEBUG @afile [{afile}] @vfile [{vfile}]")
 
+            audio_path = os.path.join(DOWNLOAD_DIR, afile) if afile else None
+            video_path = os.path.join(DOWNLOAD_DIR, vfile) if vfile else None
+            perr(f"DEBUG @audio_path [{audio_path}] @video_path [{video_path}]")
+
+            if video_path and os.path.isfile(video_path):
+                self.send_response_redirect(f"/{vfile}")
+                return
+            if audio_path and os.path.isfile(audio_path):
+                self.send_response_redirect(f"/{afile}")
+                return
+
             yt_dlp.YoutubeDL({"listformats": True}).download([url])
 
             download_err = None
@@ -110,18 +122,14 @@ class DSSHandler(http.server.BaseHTTPRequestHandler):
                 self.send_response_err(f"{download_err}", status=500)
                 return
 
-            audio_path = os.path.join(DOWNLOAD_DIR, afile) if afile else None
-            audio_ready = os.path.isfile(audio_path) if audio_path else False
-
-            video_path = os.path.join(DOWNLOAD_DIR, vfile) if vfile else None
-            video_ready = os.path.isfile(video_path) if video_path else False
-
-            if audio_ready:
-                self.send_response_redirect(f"/{afile}")
-            elif video_ready:
+            if video_path and os.path.isfile(video_path):
                 self.send_response_redirect(f"/{vfile}")
-            else:
-                self.send_response_err(f"ERROR both audio_ready and video_ready is false", status=202)
+                return
+            if audio_path and os.path.isfile(audio_path):
+                self.send_response_redirect(f"/{afile}")
+                return
+
+            self.send_response_err(f"ERROR both audio_ready and video_ready is false", status=202)
             return
 
         except Exception as err:
