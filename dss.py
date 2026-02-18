@@ -90,6 +90,8 @@ class DSSHandler(http.server.BaseHTTPRequestHandler):
         path = urllib.parse.urlparse(self.path).path
         perr(f"DEBUG GET path [{path}]")
 
+        #yt_dlp.YoutubeDL({"listformats": True}).download([url])
+
         if path.startswith("/audio/"):
             self.do_GET_audio(path.removeprefix("/audio/"))
         elif path.startswith("/video/"):
@@ -137,10 +139,18 @@ class DSSHandler(http.server.BaseHTTPRequestHandler):
                 self.send_response_redirect(f"/file/{filename}")
                 return
 
-            #yt_dlp.YoutubeDL({"listformats": True}).download([url])
-
-            download_err = download_audio(url, filename)
-            if download_err:
+            ytdlopts = YtdlOpts | {
+                "format": "bestaudio[ext=m4a]",
+                "outtmpl": os.path.join(DOWNLOAD_DIR, filename),
+                "postprocessors": [{
+                    "key": "FFmpegExtractAudio",
+                    "preferredcodec": "m4a",
+                    "preferredquality": "0",
+                }],
+            }
+            try:
+                yt_dlp.YoutubeDL(ytdlopts).download([url])
+            except Exception as download_err:
                 perr(f"ERROR {download_err}")
                 self.send_response_err(f"{download_err}", status=500)
                 return
@@ -190,10 +200,14 @@ class DSSHandler(http.server.BaseHTTPRequestHandler):
                 self.send_response_redirect(f"/file/{filename}")
                 return
 
-            #yt_dlp.YoutubeDL({"listformats": True}).download([url])
-
-            download_err = download_video(url, filename)
-            if download_err:
+            ytdlopts = YtdlOpts | {
+                "format": "bestvideo[vcodec^=avc1]+bestaudio[ext=m4a]",
+                "outtmpl": os.path.join(DOWNLOAD_DIR, filename),
+                "merge_output_format": "mp4",
+            }
+            try:
+                yt_dlp.YoutubeDL(ytdlopts).download([url])
+            except Exception as download_err:
                 perr(f"ERROR {download_err}")
                 self.send_response_err(f"{download_err}", status=500)
                 return
@@ -216,30 +230,33 @@ class DSSHandler(http.server.BaseHTTPRequestHandler):
         url = "https://" + url
         perr(f"DEBUG @url [{url}]")
 
+        ytdlopts = YtdlOpts | {
+            "noplaylist": True,
+        }
         try:
-            vinfo = yt_dlp.YoutubeDL(YtdlOpts).extract_info(url, download=False)
-
-            vthumburl = ""
-            vthumbwidth = 0
-            for vt in vinfo.get("thumbnails", []):
-                vtu = vt.get("url", "")
-                if not vtu.endswith(".jpg"):
-                    continue
-                vtw = vt.get("width", 0)
-                if vtw > vthumbwidth:
-                    vthumburl = vtu
-                    vthumbwidth = vtw
-            perr(f"DEBUG @vthumburl [{vthumburl}] @vthumbwidth <{vthumbwidth}>")
-
-            if not vthumburl:
-                self.send_response_err(f"ERROR vthumburl empty", status=500)
-                return
-
-            self.send_response_redirect(vthumburl)
-
+            vinfo = yt_dlp.YoutubeDL(ytdlopts).extract_info(url, download=False)
         except Exception as err:
             self.send_response_err(f"{err}", status=500)
             return
+
+        vthumburl = ""
+        vthumbwidth = 0
+        for vt in vinfo.get("thumbnails", []):
+            vtu = vt.get("url", "")
+            if not vtu.endswith(".jpg"):
+                continue
+            vtw = vt.get("width", 0)
+            if vtw > vthumbwidth:
+                vthumburl = vtu
+                vthumbwidth = vtw
+        perr(f"DEBUG @vthumburl [{vthumburl}] @vthumbwidth <{vthumbwidth}>")
+
+        if not vthumburl:
+            self.send_response_err(f"ERROR vthumburl empty", status=500)
+            return
+
+        self.send_response_redirect(vthumburl)
+
 
 
     def send_response_redirect(self, location, status=302):
@@ -301,36 +318,6 @@ class DSSHandler(http.server.BaseHTTPRequestHandler):
 
     def log_message(self, format, *args):
         pass
-
-
-def download_audio(url, filename):
-    opts = YtdlOpts | {
-        "quiet": False,
-        "format": "bestaudio[ext=m4a]",
-        "outtmpl": os.path.join(DOWNLOAD_DIR, filename),
-        "postprocessors": [{
-            "key": "FFmpegExtractAudio",
-            "preferredcodec": "m4a",
-            "preferredquality": "0",
-        }],
-    }
-    try:
-        yt_dlp.YoutubeDL(opts).download([url])
-    except Exception as download_err:
-        return download_err
-
-
-def download_video(url, filename):
-    opts = YtdlOpts | {
-        "quiet": False,
-        "format": "bestvideo[vcodec^=avc1]+bestaudio[ext=m4a]",
-        "outtmpl": os.path.join(DOWNLOAD_DIR, filename),
-        "merge_output_format": "mp4",
-    }
-    try:
-        yt_dlp.YoutubeDL(opts).download([url])
-    except Exception as download_err:
-        return download_err
 
 
 def sanitize_filename(name):
