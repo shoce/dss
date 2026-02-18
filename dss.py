@@ -5,6 +5,7 @@ import re
 import http.server
 import urllib.parse
 sys.path.insert(0, "./vendor")
+import unidecode
 # https://github.com/yt-dlp/yt-dlp
 import yt_dlp
 
@@ -44,7 +45,7 @@ class DSSHandler(http.server.BaseHTTPRequestHandler):
             try:
                 vinfo = yt_dlp.YoutubeDL(YtdlOpts).extract_info(url, download=False)
             except Exception as err:
-                self.send_response_err(f"{err}", status=500)
+                self.send_response_err(f"ERROR {err}", status=500)
                 return
 
             vid = vinfo.get("id", "nil-id")
@@ -225,8 +226,13 @@ class DSSHandler(http.server.BaseHTTPRequestHandler):
 
 
 def sanitize_filename(name):
+    perr(f"DEBUG sanitize_filename @name [{name}]")
+    name = unidecode.unidecode(name)
+    perr(f"DEBUG sanitize_filename @name [{name}]")
     name = re.sub(r"[^a-zA-Z0-9_.-]", ".", name)
+    perr(f"DEBUG sanitize_filename @name [{name}]")
     name = re.sub(r"\.\.+", "..", name)
+    perr(f"DEBUG sanitize_filename @name [{name}]")
     return name
 
 def main():
