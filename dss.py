@@ -152,7 +152,7 @@ class DSSHandler(http.server.BaseHTTPRequestHandler):
                 self.send_response_redirect(f"/{afile}")
                 return
 
-            yt_dlp.YoutubeDL({"listformats": True}).download([url])
+            #yt_dlp.YoutubeDL({"listformats": True}).download([url])
 
             download_err = None
             if vfile:
