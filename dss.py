@@ -45,7 +45,6 @@ class DSSHandler(http.server.BaseHTTPRequestHandler):
 
 
     def GET_method_only(self): self.send_response_err("GET method only", add_headers=dict(Allow="GET"), status=405)
-    def do_HEAD(self): self.GET_method_only()
     def do_POST(self): self.GET_method_only()
     def do_PUT(self): self.GET_method_only()
     def do_DELETE(self): self.GET_method_only()
@@ -53,10 +52,42 @@ class DSSHandler(http.server.BaseHTTPRequestHandler):
     def do_OPTIONS(self): self.GET_method_only()
 
 
+    def do_HEAD(self):
+
+        filename = urllib.parse.unquote(self.path.lstrip('/'))
+        perr(f"DEBUG HEAD filename [{filename}]")
+
+        path = os.path.join(DOWNLOAD_DIR, filename)
+        perr(f"DEBUG path [{path}]")
+
+        if not os.path.isfile(path):
+            perr(f"DEBUG path [{path}] file does not exist")
+            self.send_error(404, "ERROR file not found")
+            return
+
+        try:
+            clength = os.path.getsize(path)
+        except Exception as err:
+            self.send_error(500, f"ERROR get file size {err}")
+            return
+
+        if filename.endswith(".m4a"):
+            ctype = "audio/mp4"
+        elif filename.endswith(".mp4"):
+            ctype = "video/mp4"
+        else:
+            ctype = "application/octet-stream"
+
+        self.send_response(200)
+        self.send_header("Content-Type", ctype)
+        self.send_header("Content-Length", clength)
+        self.end_headers()
+
+
     def do_GET(self):
 
         path = urllib.parse.urlparse(self.path).path
-        perr(f"DEBUG path [{path}]")
+        perr(f"DEBUG GET path [{path}]")
 
         if path == "/":
             self.do_GET_url()
@@ -143,6 +174,7 @@ class DSSHandler(http.server.BaseHTTPRequestHandler):
 
         except Exception as err:
             self.send_response_err(f"{err}", status=500)
+            return
 
 
     def send_response_redirect(self, filepath, status=302):
@@ -156,13 +188,6 @@ class DSSHandler(http.server.BaseHTTPRequestHandler):
         filename = urllib.parse.unquote(self.path.lstrip('/'))
         perr(f"DEBUG filename [{filename}]")
 
-        if filename.endswith(".m4a"):
-            ctype = "audio/mp4"
-        elif filename.endswith(".mp4"):
-            ctype = "video/mp4"
-        else:
-            ctype = "application/octet-stream"
-
         path = os.path.join(DOWNLOAD_DIR, filename)
         perr(f"DEBUG path [{path}]")
 
@@ -172,14 +197,28 @@ class DSSHandler(http.server.BaseHTTPRequestHandler):
             return
 
         try:
+            clength = os.path.getsize(path)
+        except Exception as err:
+            self.send_error(500, f"ERROR get file size {err}")
+            return
+
+        if filename.endswith(".m4a"):
+            ctype = "audio/mp4"
+        elif filename.endswith(".mp4"):
+            ctype = "video/mp4"
+        else:
+            ctype = "application/octet-stream"
+
+        try:
             with open(path, "rb") as f:
                 self.send_response(200)
                 self.send_header("Content-Type", ctype)
-                self.send_header("Content-Length", os.path.getsize(path))
+                self.send_header("Content-Length", clength)
                 self.end_headers()
                 self.wfile.write(f.read())
         except Exception as err:
             self.send_error(500, f"ERROR reading file {err}")
+            return
 
 
     def send_response_err(self, err, add_headers={}, status=400):
@@ -241,7 +280,7 @@ def download_video(url, vfile, vq):
 
 def sanitize_filename(name):
     name = re.sub(r"[^a-zA-Z0-9_.-]", ".", name)
-    #name = re.sub(r"\.+", ".", name)
+    name = re.sub(r"\.\.+", "..", name)
     return name
 
 
