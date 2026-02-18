@@ -28,7 +28,9 @@ TitleWordsN = 6
 YtdlOpts = {
     "quiet": False,
     "js_runtimes": {
-        "deno": "./deno",
+        "deno": {
+            "path": "./deno",
+        },
     },
 }
 
