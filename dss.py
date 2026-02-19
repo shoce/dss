@@ -116,16 +116,23 @@ class DSSHandler(http.server.BaseHTTPRequestHandler):
             filename = path.removeprefix("/downloads/")
             if "/" in filename: return self.send_response_err(f"HAHA nice try", status=404)
 
-            ff = []; ffsize = 0
-            for f in os.scandir(DOWNLOADS_DIR):
-                if not f.is_file(): continue
-                fstat = f.stat()
-                ff.append((f.name, fstat.st_size, fstat.st_mtime))
-                ffsize += fstat.st_size
-            ff.sort(key=lambda x: x[2])
-            perr(f"DEBUG @DOWNLOADS_DIR [{DOWNLOADS_DIR}] @size <{ffsize}>")
-
             if not filename:
+                ff = []; ffsize = 0
+                for f in os.scandir(DOWNLOADS_DIR):
+                    if not f.is_file(): continue
+                    fstat = f.stat()
+                    ff.append((f.name, fstat.st_size, fstat.st_mtime))
+                    ffsize += fstat.st_size
+                ff.sort(key=lambda x: x[2])
+                perr(f"DEBUG @DOWNLOADS_DIR [{DOWNLOADS_DIR}] @size <{ffsize}>")
+                if ffsize > DOWNLOADS_DIR_MAX_SIZE:
+                    for f in ff:
+                        fpath = os.path.join(DOWNLOADS_DIR, f[0])
+                        perr(f"DEBUG delete @path [{fpath}] @size <{fmtsize(f[1])}> @mtime <{fmttime(f[2])}>")
+                        try: os.remove(fpath)
+                        except OSError as err: perr(f"ERROR delete @path [{fpath}] {err}")
+                        ffsize -= f[1]
+                        if ffsize < DOWNLOADS_DIR_MAX_SIZE: break
                 self.send_response(200)
                 self.send_header("Content-Type", "text/tab-separated-values")
                 self.end_headers()
@@ -157,15 +164,6 @@ class DSSHandler(http.server.BaseHTTPRequestHandler):
                         if not fchunk: break
                         self.wfile.write(fchunk)
             except Exception as err: return self.send_response_err(f"ERROR serve file {err}", status=500)
-
-            if ffsize > DOWNLOADS_DIR_MAX_SIZE:
-                for f in ff:
-                    fpath = os.path.join(DOWNLOADS_DIR, f[0])
-                    perr(f"DEBUG delete @path [{fpath}] @size <{fmtsize(f[1])}> @mtime <{fmttime(f[2])}>")
-                    try: os.remove(fpath)
-                    except OSError as err: perr(f"ERROR delete @path [{fpath}] {err}")
-                    ffsize -= f[1]
-                    if ffsize < DOWNLOADS_DIR_MAX_SIZE: break
 
         else: self.send_response_err(f"ERROR invalid path prefix", status=400)
 
