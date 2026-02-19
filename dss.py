@@ -23,10 +23,10 @@ def sanitize_filename(name):
     #perr(f"DEBUG sanitize_filename @name [{name}]")
     return name
 
-DOWNLOADS_DIR = os.path.abspath("downloads/")
-os.makedirs(DOWNLOADS_DIR, exist_ok=True)
-DOWNLOADS_DIR_MAX_SIZE = int(os.getenv("DOWNLOADS_DIR_MAX_SIZE", "4123123123"))
-perr(f"DEBUG @DOWNLOADS_DIR [{DOWNLOADS_DIR}] @DOWNLOADS_DIR_MAX_SIZE <{DOWNLOADS_DIR_MAX_SIZE}>")
+DownloadsDir = os.path.abspath(os.getenv("DownloadsDir", "downloads/"))
+os.makedirs(DownloadsDir, exist_ok=True)
+DownloadsDirMaxSize = int(os.getenv("DownloadsDirMaxSize", "4123123123"))
+perr(f"DEBUG @DownloadsDir [{DownloadsDir}] @DownloadsDirMaxSize <{DownloadsDirMaxSize}>")
 
 class DSSHandler(http.server.BaseHTTPRequestHandler):
     server_version = "dss/1.0"
@@ -60,7 +60,7 @@ class DSSHandler(http.server.BaseHTTPRequestHandler):
             if path.startswith("/audio/"): filename = filename + "m4a"
             elif path.startswith("/video/"): filename = filename + "mp4"
             elif path.startswith("/thumb/"): filename = filename + "jpg"
-            filepath = os.path.join(DOWNLOADS_DIR, filename)
+            filepath = os.path.join(DownloadsDir, filename)
             perr(f"DEBUG @filename [{filename}] @filepath [{filepath}]")
             if os.path.isfile(filepath): return self.send_response_redirect(f"/downloads/{filename}")
 
@@ -69,7 +69,7 @@ class DSSHandler(http.server.BaseHTTPRequestHandler):
 
             ytdlopts = YtdlOpts | {
                 "format": "bestaudio[ext=m4a]",
-                "outtmpl": os.path.join(DOWNLOADS_DIR, filename),
+                "outtmpl": os.path.join(DownloadsDir, filename),
                 "postprocessors": [{
                     "key": "FFmpegExtractAudio",
                     "preferredcodec": "m4a",
@@ -86,7 +86,7 @@ class DSSHandler(http.server.BaseHTTPRequestHandler):
 
             ytdlopts = YtdlOpts | {
                 "format": "bestvideo[vcodec^=avc1]+bestaudio[ext=m4a]",
-                "outtmpl": os.path.join(DOWNLOADS_DIR, filename),
+                "outtmpl": os.path.join(DownloadsDir, filename),
                 "merge_output_format": "mp4",
             }
             try: yt_dlp.YoutubeDL(ytdlopts).download([url])
@@ -118,21 +118,21 @@ class DSSHandler(http.server.BaseHTTPRequestHandler):
 
             if not filename:
                 ff = []; ffsize = 0
-                for f in os.scandir(DOWNLOADS_DIR):
+                for f in os.scandir(DownloadsDir):
                     if not f.is_file(): continue
                     fstat = f.stat()
                     ff.append((f.name, fstat.st_size, fstat.st_mtime))
                     ffsize += fstat.st_size
                 ff.sort(key=lambda x: x[2])
-                perr(f"DEBUG @DOWNLOADS_DIR [{DOWNLOADS_DIR}] @size <{ffsize}>")
-                if ffsize > DOWNLOADS_DIR_MAX_SIZE:
+                perr(f"DEBUG @DownloadsDir [{DownloadsDir}] @size <{ffsize}>")
+                if ffsize > DownloadsDirMaxSize:
                     for f in ff:
-                        fpath = os.path.join(DOWNLOADS_DIR, f[0])
+                        fpath = os.path.join(DownloadsDir, f[0])
                         perr(f"DEBUG delete @path [{fpath}] @size <{fmtsize(f[1])}> @mtime <{fmttime(f[2])}>")
                         try: os.remove(fpath)
                         except OSError as err: perr(f"ERROR delete @path [{fpath}] {err}")
                         ffsize -= f[1]
-                        if ffsize < DOWNLOADS_DIR_MAX_SIZE: break
+                        if ffsize < DownloadsDirMaxSize: break
                 self.send_response(200)
                 self.send_header("Content-Type", "text/tab-separated-values")
                 self.end_headers()
@@ -145,7 +145,7 @@ class DSSHandler(http.server.BaseHTTPRequestHandler):
             elif filename.endswith(".mp4"): ctype = "video/mp4"
             else: return self.send_response_err(f"ERROR invalid file suffix", status=400)
 
-            filepath = os.path.join(DOWNLOADS_DIR, filename)
+            filepath = os.path.join(DownloadsDir, filename)
             perr(f"DEBUG path [{filepath}]")
 
             if not os.path.isfile(filepath): return self.send_response_err(f"ERROR file not found", status=404)

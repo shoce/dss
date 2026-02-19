@@ -38,7 +38,9 @@ spec:
             - name: "dss"
               mountPath: "/dss/downloads/"
           env:
-            - name: "DOWNLOADS_DIR_MAX_SIZE"
-              value: "{{ $.Values.DOWNLOADS_DIR_MAX_SIZE }}"
+            - name: "DownloadsDir"
+              value: "{{ $.Values.DownloadsDir }}"
+            - name: "DownloadsDirMaxSize"
+              value: "{{ $.Values.DownloadsDirMaxSize }}"
 
 
