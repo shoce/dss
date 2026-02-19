@@ -124,7 +124,7 @@ class DSSHandler(http.server.BaseHTTPRequestHandler):
                     ff.append((f.name, fstat.st_size, fstat.st_mtime))
                     ffsize += fstat.st_size
                 ff.sort(key=lambda x: x[2])
-                perr(f"DEBUG @DownloadsDir [{DownloadsDir}] @size <{fmtsize(ffsize)}>")
+                perr(f"DEBUG @DownloadsDir [{DownloadsDir}] @size <{fmtsize(ffsize)}> @DownloadsDirMaxSize <{fmtsize(DownloadsDirMaxSize)}>")
                 if ffsize > DownloadsDirMaxSize:
                     for f in ff:
                         fpath = os.path.join(DownloadsDir, f[0])
