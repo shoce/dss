@@ -26,7 +26,7 @@ def sanitize_filename(name):
 DownloadsDir = os.path.abspath(os.getenv("DownloadsDir", "downloads/"))
 os.makedirs(DownloadsDir, exist_ok=True)
 DownloadsDirMaxSize = int(os.getenv("DownloadsDirMaxSize", "4123123123"))
-perr(f"DEBUG @DownloadsDir [{DownloadsDir}] @DownloadsDirMaxSize <{DownloadsDirMaxSize}>")
+perr(f"DEBUG @DownloadsDir [{DownloadsDir}] @DownloadsDirMaxSize <{fmtsize(DownloadsDirMaxSize)}>")
 
 class DSSHandler(http.server.BaseHTTPRequestHandler):
     server_version = "dss/1.0"
@@ -39,12 +39,12 @@ class DSSHandler(http.server.BaseHTTPRequestHandler):
 
         if path.startswith(("/audio/", "/video/", "/thumb/")):
 
-            url = path.removeprefix("/audio/").removeprefix("/video/").removeprefix("/thumb/")
-            if not url: return self.send_response_err(f"ERROR video/audio url missing", status=400)
-            url = "https://" + url
-            perr(f"DEBUG @url [{url}]")
+            vurl = path.removeprefix("/audio/").removeprefix("/video/").removeprefix("/thumb/")
+            if not vurl: return self.send_response_err(f"ERROR video url missing", status=400)
+            vurl = "https://" + vurl
+            perr(f"DEBUG @vurl [{vurl}]")
 
-            try: vinfo = yt_dlp.YoutubeDL(YtdlOpts).extract_info(url, download=False)
+            try: vinfo = yt_dlp.YoutubeDL(YtdlOpts).extract_info(vurl, download=False)
             except Exception as err: return self.send_response_err(f"ERROR {err}", status=500)
 
             vid = vinfo.get("id", "nil-id")
@@ -76,7 +76,7 @@ class DSSHandler(http.server.BaseHTTPRequestHandler):
                     "preferredquality": "0",
                 }],
             }
-            try: yt_dlp.YoutubeDL(ytdlopts).download([url])
+            try: yt_dlp.YoutubeDL(ytdlopts).download([vurl])
             except Exception as download_err: return self.send_response_err(f"ERROR {download_err}", status=500)
 
             if os.path.isfile(filepath): self.send_response_redirect(f"/downloads/{filename}")
@@ -89,7 +89,7 @@ class DSSHandler(http.server.BaseHTTPRequestHandler):
                 "outtmpl": os.path.join(DownloadsDir, filename),
                 "merge_output_format": "mp4",
             }
-            try: yt_dlp.YoutubeDL(ytdlopts).download([url])
+            try: yt_dlp.YoutubeDL(ytdlopts).download([vurl])
             except Exception as download_err: return self.send_response_err(f"ERROR {download_err}", status=500)
 
             if os.path.isfile(filepath): self.send_response_redirect(f"/downloads/{filename}")
@@ -124,7 +124,7 @@ class DSSHandler(http.server.BaseHTTPRequestHandler):
                     ff.append((f.name, fstat.st_size, fstat.st_mtime))
                     ffsize += fstat.st_size
                 ff.sort(key=lambda x: x[2])
-                perr(f"DEBUG @DownloadsDir [{DownloadsDir}] @size <{ffsize}>")
+                perr(f"DEBUG @DownloadsDir [{DownloadsDir}] @size <{fmtsize(ffsize)}>")
                 if ffsize > DownloadsDirMaxSize:
                     for f in ff:
                         fpath = os.path.join(DownloadsDir, f[0])
