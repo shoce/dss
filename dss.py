@@ -1,14 +1,11 @@
 # python3 -m py_compile dss.py
-import sys
-import os
-import re
-import http.server
-import urllib.parse
-sys.path.insert(0, "./vendor")
-import unidecode
+# TODO separate golang server for thumbs, downloads and cleaning
 # https://github.com/yt-dlp/yt-dlp
-import yt_dlp
+import sys, os, re, time, http.server, urllib.parse
+sys.path.insert(0, "./vendor")
+import unidecode, yt_dlp
 
+TAB = "\t"
 NL = "\n"
 TitleWordsN = 6
 YtdlOpts = {
@@ -16,8 +13,15 @@ YtdlOpts = {
     "js_runtimes": { "deno": { "path": "./deno" } },
 }
 
-def perr(msg):
-    print(f"{msg}", file=sys.stderr, flush=True)
+def perr(msg): print(f"{msg}", file=sys.stderr, flush=True)
+def fmtsize(n): return f"{n:,}"
+def fmttime(t): return time.strftime('%Y:%m%d:%H%M%S', time.localtime(t))
+def sanitize_filename(name):
+    name = unidecode.unidecode(name)
+    name = re.sub(r"[^a-zA-Z0-9.]", ".", name)
+    name = re.sub(r"\.+", ".", name)
+    #perr(f"DEBUG sanitize_filename @name [{name}]")
+    return name
 
 DOWNLOADS_DIR = os.path.abspath("downloads/")
 os.makedirs(DOWNLOADS_DIR, exist_ok=True)
@@ -36,17 +40,12 @@ class DSSHandler(http.server.BaseHTTPRequestHandler):
         if path.startswith(("/audio/", "/video/", "/thumb/")):
 
             url = path.removeprefix("/audio/").removeprefix("/video/").removeprefix("/thumb/")
-            if not url:
-               self.send_response_err(f"ERROR missing url", status=400)
-               return
+            if not url: return self.send_response_err(f"ERROR video/audio url missing", status=400)
             url = "https://" + url
             perr(f"DEBUG @url [{url}]")
 
-            try:
-                vinfo = yt_dlp.YoutubeDL(YtdlOpts).extract_info(url, download=False)
-            except Exception as err:
-                self.send_response_err(f"ERROR {err}", status=500)
-                return
+            try: vinfo = yt_dlp.YoutubeDL(YtdlOpts).extract_info(url, download=False)
+            except Exception as err: return self.send_response_err(f"ERROR {err}", status=500)
 
             vid = vinfo.get("id", "nil-id")
             vdate = vinfo.get("upload_date", "nil-date")
@@ -56,20 +55,14 @@ class DSSHandler(http.server.BaseHTTPRequestHandler):
             vtitle = ".".join(vtitle.split()[:TitleWordsN])
             filename = filename + sanitize_filename(vtitle) + ".."
             vservice = vinfo.get("extractor_key", "nil-service")
-            if vservice != "Youtube":
-                filename = f"{vservice}.." + filename
+            if vservice != "Youtube": filename = f"{vservice}.." + filename
 
-            if path.startswith("/audio/"):
-                filename = filename + "m4a"
-            elif path.startswith("/video/"):
-                filename = filename + "mp4"
-            elif path.startswith("/thumb/"):
-                filename = filename + "jpg"
+            if path.startswith("/audio/"): filename = filename + "m4a"
+            elif path.startswith("/video/"): filename = filename + "mp4"
+            elif path.startswith("/thumb/"): filename = filename + "jpg"
             filepath = os.path.join(DOWNLOADS_DIR, filename)
             perr(f"DEBUG @filename [{filename}] @filepath [{filepath}]")
-            if os.path.isfile(filepath):
-                self.send_response_redirect(f"/downloads/{filename}")
-                return
+            if os.path.isfile(filepath): return self.send_response_redirect(f"/downloads/{filename}")
 
 
         if path.startswith("/audio/"):
@@ -83,16 +76,11 @@ class DSSHandler(http.server.BaseHTTPRequestHandler):
                     "preferredquality": "0",
                 }],
             }
-            try:
-                yt_dlp.YoutubeDL(ytdlopts).download([url])
-            except Exception as download_err:
-                self.send_response_err(f"ERROR {download_err}", status=500)
-                return
+            try: yt_dlp.YoutubeDL(ytdlopts).download([url])
+            except Exception as download_err: return self.send_response_err(f"ERROR {download_err}", status=500)
 
-            if os.path.isfile(filepath):
-                self.send_response_redirect(f"/downloads/{filename}")
-            else:
-                self.send_response_err(f"ERROR file [{filename}] not found", status=500)
+            if os.path.isfile(filepath): self.send_response_redirect(f"/downloads/{filename}")
+            else: self.send_response_err(f"ERROR file [{filename}] not found", status=500)
 
         elif path.startswith("/video/"):
 
@@ -101,16 +89,11 @@ class DSSHandler(http.server.BaseHTTPRequestHandler):
                 "outtmpl": os.path.join(DOWNLOADS_DIR, filename),
                 "merge_output_format": "mp4",
             }
-            try:
-                yt_dlp.YoutubeDL(ytdlopts).download([url])
-            except Exception as download_err:
-                self.send_response_err(f"ERROR {download_err}", status=500)
-                return
+            try: yt_dlp.YoutubeDL(ytdlopts).download([url])
+            except Exception as download_err: return self.send_response_err(f"ERROR {download_err}", status=500)
 
-            if os.path.isfile(filepath):
-                self.send_response_redirect(f"/downloads/{filename}")
-            else:
-                self.send_response_err(f"ERROR file [{filename}] not found", status=500)
+            if os.path.isfile(filepath): self.send_response_redirect(f"/downloads/{filename}")
+            else: self.send_response_err(f"ERROR file [{filename}] not found", status=500)
 
         elif path.startswith("/thumb/"):
 
@@ -118,47 +101,50 @@ class DSSHandler(http.server.BaseHTTPRequestHandler):
             vthumbwidth = 0
             for vt in vinfo.get("thumbnails", []):
                 vtu = vt.get("url", "")
-                if not vtu.endswith(".jpg"):
-                    continue
+                if not vtu.endswith(".jpg"): continue
                 vtw = vt.get("width", 0)
                 if vtw > vthumbwidth:
                     vthumburl = vtu
                     vthumbwidth = vtw
             perr(f"DEBUG @vthumburl [{vthumburl}] @vthumbwidth <{vthumbwidth}>")
 
-            if not vthumburl:
-                self.send_response_err(f"ERROR vthumburl empty", status=500)
-                return
-
-            self.send_response_redirect(vthumburl)
+            if vthumburl: self.send_response_redirect(vthumburl)
+            else: self.send_response_err(f"ERROR vthumburl empty", status=500)
 
         elif path.startswith("/downloads/"):
 
             filename = path.removeprefix("/downloads/")
-            if "/" in filename:
-                self.send_response_err(f"HAHA nice try", status=404)
+            if "/" in filename: return self.send_response_err(f"HAHA nice try", status=404)
+
+            ff = []; ffsize = 0
+            for f in os.scandir(DOWNLOADS_DIR):
+                if not f.is_file(): continue
+                fstat = f.stat()
+                ff.append((f.name, fstat.st_size, fstat.st_mtime))
+                ffsize += fstat.st_size
+            ff.sort(key=lambda x: x[2])
+            perr(f"DEBUG @DOWNLOADS_DIR [{DOWNLOADS_DIR}] @size <{ffsize}>")
+
+            if not filename:
+                self.send_response(200)
+                self.send_header("Content-Type", "text/tab-separated-values")
+                self.end_headers()
+                self.wfile.write(f"@url{TAB}{TAB}@size{TAB}@mtime{NL}".encode())
+                for f in ff: self.wfile.write(f"http://{self.headers.get('Host')}/downloads/{f[0]}{TAB}{TAB}<{fmtsize(f[1])}>{TAB}<{fmttime(f[2])}>{NL}".encode())
+                self.wfile.write(f"http://{self.headers.get('Host')}/downloads/{TAB}{TAB}<{fmtsize(ffsize)}>{TAB}<>{NL}".encode())
                 return
 
-            if filename.endswith(".m4a"):
-                ctype = "audio/mp4"
-            elif filename.endswith(".mp4"):
-                ctype = "video/mp4"
-            else:
-                self.send_response_err(f"ERROR invalid file suffix", status=400)
-                return
+            if filename.endswith(".m4a"): ctype = "audio/mp4"
+            elif filename.endswith(".mp4"): ctype = "video/mp4"
+            else: return self.send_response_err(f"ERROR invalid file suffix", status=400)
 
             filepath = os.path.join(DOWNLOADS_DIR, filename)
             perr(f"DEBUG path [{filepath}]")
 
-            if not os.path.isfile(filepath):
-                self.send_response_err(f"ERROR file not found", status=404)
-                return
+            if not os.path.isfile(filepath): return self.send_response_err(f"ERROR file not found", status=404)
 
-            try:
-                clength = os.path.getsize(filepath)
-            except Exception as err:
-                self.send_response_err(f"ERROR get file size {err}", status=500)
-                return
+            try: clength = os.path.getsize(filepath)
+            except Exception as err: return self.send_response_err(f"ERROR get file size {err}", status=500)
 
             try:
                 with open(filepath, "rb") as f:
@@ -168,37 +154,20 @@ class DSSHandler(http.server.BaseHTTPRequestHandler):
                     self.end_headers()
                     while True:
                         fchunk = f.read(128 * 1024)
-                        if not fchunk:
-                            break
+                        if not fchunk: break
                         self.wfile.write(fchunk)
-            except Exception as err:
-                self.send_response_err(f"ERROR serve file {err}", status=500)
-                return
+            except Exception as err: return self.send_response_err(f"ERROR serve file {err}", status=500)
 
-            ff = []
-            ffsize = 0
-            for f in os.scandir(DOWNLOADS_DIR):
-                if f.is_file():
-                    fstat = f.stat()
-                    ff.append((f.name, fstat.st_size, fstat.st_mtime))
-                    ffsize += fstat.st_size
-            perr(f"DEBUG @DOWNLOADS_DIR [{DOWNLOADS_DIR}] total files size <{ffsize}>")
             if ffsize > DOWNLOADS_DIR_MAX_SIZE:
-                ff.sort(key=lambda x: x[2])
                 for f in ff:
                     fpath = os.path.join(DOWNLOADS_DIR, f[0])
-                    perr(f"DEBUG delete @path [{fpath}] @size <{f[1]}> @mtime <{f[2]}>")
-                    try:
-                        os.remove(fpath)
-                    except OSError as err:
-                        perr(f"ERROR delete @path [{fpath}] {err}")
+                    perr(f"DEBUG delete @path [{fpath}] @size <{fmtsize(f[1])}> @mtime <{fmttime(f[2])}>")
+                    try: os.remove(fpath)
+                    except OSError as err: perr(f"ERROR delete @path [{fpath}] {err}")
                     ffsize -= f[1]
-                    if ffsize < DOWNLOADS_DIR_MAX_SIZE:
-                        break
+                    if ffsize < DOWNLOADS_DIR_MAX_SIZE: break
 
-        else:
-
-            self.send_response_err(f"ERROR invalid path prefix", status=400)
+        else: self.send_response_err(f"ERROR invalid path prefix", status=400)
 
 
     def send_response_redirect(self, location, status=302):
@@ -212,27 +181,15 @@ class DSSHandler(http.server.BaseHTTPRequestHandler):
         self.send_response(status)
         self.send_header("Content-Type", "text/plain")
         self.send_header("Content-Length", len(respbody))
-        for hkey, hval in add_headers.items():
-            self.send_header(hkey, hval)
+        for hkey, hval in add_headers.items(): self.send_header(hkey, hval)
         self.end_headers()
         self.wfile.write(respbody)
 
-    def log_message(self, format, *args):
-        pass
+    def log_message(self, format, *args): pass
 
     def do_HEAD(self): self.send_response_err(f"GET method only", add_headers=dict(Allow="GET"), status=405)
     def do_POST(self): self.send_response_err(f"GET method only", add_headers=dict(Allow="GET"), status=405)
 
-
-def sanitize_filename(name):
-    perr(f"DEBUG sanitize_filename @name [{name}]")
-    name = unidecode.unidecode(name)
-    perr(f"DEBUG sanitize_filename @name [{name}]")
-    name = re.sub(r"[^a-zA-Z0-9.]", ".", name)
-    perr(f"DEBUG sanitize_filename @name [{name}]")
-    name = re.sub(r"\.+", ".", name)
-    perr(f"DEBUG sanitize_filename @name [{name}]")
-    return name
 
 def main():
     server = http.server.HTTPServer(("", 80), DSSHandler)
@@ -243,6 +200,5 @@ def main():
         perr(f"shutting down")
         server.shutdown()
 
-if __name__ == "__main__":
-    main()
+if __name__ == "__main__": main()
 
