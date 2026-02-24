@@ -1,12 +1,13 @@
 # python3 -m py_compile dss.py
 # TODO separate golang server for thumbs, downloads and cleaning
 # https://github.com/yt-dlp/yt-dlp
-import sys, os, re, time, http.server, urllib.parse
+import sys, os, string, time, http.server, urllib.parse
 sys.path.insert(0, "./vendor")
 import unidecode, yt_dlp
 
 TAB = "\t"
 NL = "\n"
+TitleAllowedChars = set(string.ascii_letters + string.digits + ".")
 TitleWordsN = 6
 YtdlOpts = {
     "quiet": False,
@@ -17,11 +18,11 @@ def perr(msg): print(f"{msg}", file=sys.stderr, flush=True)
 def fmtsize(n): return f"{n:,}"
 def fmttime(t): return time.strftime('%Y:%m%d:%H%M%S', time.localtime(t))
 def sanitize_filename(name):
-    name = unidecode.unidecode(name)
-    name = re.sub(r"[^a-zA-Z0-9.]", ".", name)
-    name = re.sub(r"\.+", ".", name)
-    #perr(f"DEBUG sanitize_filename @name [{name}]")
-    return name
+    name2 = unidecode.unidecode(name)
+    name2 = "".join(c if c in TitleAllowedChars else "." for c in name2)
+    name2 = ".".join(filter(None, name2.split("."))).strip(".")
+    #perr(f"DEBUG sanitize_filename @name [{name2}]")
+    return name2
 
 DownloadsDir = os.path.abspath(os.getenv("DownloadsDir", "downloads/"))
 os.makedirs(DownloadsDir, exist_ok=True)
@@ -190,7 +191,7 @@ class DSSHandler(http.server.BaseHTTPRequestHandler):
 
 
 def main():
-    server = http.server.HTTPServer(("", 80), DSSHandler)
+    server = http.server.ThreadingHTTPServer(("", 80), DSSHandler)
     perr(f"server listening on :80")
     try:
         server.serve_forever()
