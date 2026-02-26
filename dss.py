@@ -14,6 +14,9 @@ YtdlOpts = {
     "quiet": False,
     "js_runtimes": { "deno": { "path": "./deno" } },
 }
+YtVideoFormat = "bestvideo[vcodec^=avc1]"
+YtAudioFormat = "bestaudio[ext=m4a]"
+YtFormat = f"{YtVideoFormat}+{YtAudioFormat}"
 
 def perr(msg): print(f"{msg}", file=sys.stderr, flush=True)
 def fmtsize(n): return f"{n:,}"
@@ -46,7 +49,10 @@ class DSSHandler(http.server.BaseHTTPRequestHandler):
             vurl = "https://" + vurl
             perr(f"DEBUG @vurl [{vurl}]")
 
-            try: vinfo = yt_dlp.YoutubeDL(YtdlOpts).extract_info(vurl, download=False)
+            ytdlopts = YtdlOpts | {
+                "format": YtFormat,
+            }
+            try: vinfo = yt_dlp.YoutubeDL(ytdlopts).extract_info(vurl, download=False)
             except Exception as err: return self.send_response_err(f"ERROR {err}", status=500)
 
             vid = vinfo.get("id", "nil-id")
@@ -84,7 +90,7 @@ class DSSHandler(http.server.BaseHTTPRequestHandler):
         elif path.startswith("/audio/"):
 
             ytdlopts = YtdlOpts | {
-                "format": "bestaudio[ext=m4a]",
+                "format": YtAudioFormat,
                 "outtmpl": os.path.join(DownloadsDir, filename),
                 "postprocessors": [{
                     "key": "FFmpegExtractAudio",
@@ -101,7 +107,7 @@ class DSSHandler(http.server.BaseHTTPRequestHandler):
         elif path.startswith("/video/"):
 
             ytdlopts = YtdlOpts | {
-                "format": "bestvideo[vcodec^=avc1]+bestaudio[ext=m4a]",
+                "format": YtFormat,
                 "outtmpl": os.path.join(DownloadsDir, filename),
                 "merge_output_format": "mp4",
             }
