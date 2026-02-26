@@ -53,8 +53,6 @@ class DSSHandler(http.server.BaseHTTPRequestHandler):
             vdate = vinfo.get("upload_date", "nil-date")
             perr(f"DEBUG @vid [{vid}] @vdate [{vdate}]")
 
-        if path.startswith(("/audio/", "/video/", "/thumb/")):
-
             filename = f"{vid}..{vdate}.."
             vtitle = vinfo.get("title", "nil-title").strip()
             vtitle = ".".join(vtitle.split()[:TitleWordsN])
@@ -62,70 +60,26 @@ class DSSHandler(http.server.BaseHTTPRequestHandler):
             vservice = vinfo.get("extractor_key", "nil-service")
             if vservice != "Youtube": filename = f"{vservice}.." + filename
 
-            if path.startswith("/audio/"): filename = filename + "m4a"
-            elif path.startswith("/video/"): filename = filename + "mp4"
-            elif path.startswith("/thumb/"): filename = filename + "jpg"
+            if path.startswith("/info/"): filename += "json"
+            elif path.startswith("/audio/"): filename += "m4a"
+            elif path.startswith("/video/"): filename += "mp4"
+            elif path.startswith("/thumb/"): filename += "jpeg"
             filepath = os.path.join(DownloadsDir, filename)
             perr(f"DEBUG @filename [{filename}] @filepath [{filepath}]")
             if os.path.isfile(filepath): return self.send_response_redirect(f"/downloads/{filename}")
 
 
         if path.startswith("/info/"):
-            perr(f"DEBUG GET /info/")
-            respbody = json.dumps(vinfo, indent=4, ensure_ascii=False) + NL
+
+            respbody = json.dumps(vinfo, indent=TAB, ensure_ascii=False) + NL
             respbody = respbody.encode("utf-8")
-            self.send_response(200)
-            self.send_header("Content-Type", "application/json")
-            self.send_header("Content-Length", len(respbody))
-            self.end_headers()
-            self.wfile.write(respbody)
+            try:
+                with open(filepath, "wb") as f:
+                    f.write(respbody)
+            except OSError as open_write_err: return self.send_response_err(f"ERROR {open_write_err}", status=500)
 
-
-        elif path.startswith("/infoaton/"):
-            perr(f"DEBUG GET /info/")
-            vinfo2 = { k: vinfo.get(k) for k in (
-                "id", "title", "thumbnail", "description", "channel_id", "channel_url", "duration", "channel", "uploader", "upload_date", "timestamp", "fulltitle", "epoch", "height", "width", "ext", "vcodec", "acodec", "video_ext", "audio_ext", "resolution", "format", "format_id", "format_note"
-            ) }
-            respbody = ""
-            for k, v in vinfo2.items():
-                if isinstance(v, (str)):
-                    v = v.replace("]", "\\]").replace(NL, "\\n")
-                    respbody += f"@{k} [{v}]" + NL
-                if isinstance(v, (int, float, bool)):
-                    respbody += f"@{k} <{v}>" + NL
-                if isinstance(v, (list)):
-                    respbody += f"@{k} (" + SP
-                    for lv in v:
-                        if isinstance(lv, (str)):
-                            lv = lv.replace("]", "\\]").replace(NL, "\\n")
-                            respbody += f"[{lv}]" + SP
-                        if isinstance(lv, (int, float, bool)):
-                            respbody += f"<{lv}>" + SP
-                        if isinstance(lv, (list)):
-                            respbody += f"( )" + SP
-                        if isinstance(lv, (dict)):
-                            respbody += f"{{ }}" + SP
-                    respbody += ")" + NL
-                if isinstance(v, (dict)):
-                    respbody += f"@{k} {{" + SP
-                    for dk, dv in v.items():
-                        if isinstance(dv, (str)):
-                            dv = dv.replace("]", "\\]").replace(NL, "\\n")
-                            respbody += f"@{dk} [{dv}]" + SP
-                        if isinstance(dv, (int, float, bool)):
-                            respbody += f"@{dk} <{dv}>" + SP
-                        if isinstance(dv, (list)):
-                            respbody += f"@{dk} ( )" + SP
-                        if isinstance(dv, (dict)):
-                            respbody += f"@{dk} {{ }}" + SP
-                    respbody += f"}}" + NL
-            respbody = respbody.encode("utf-8")
-            self.send_response(200)
-            self.send_header("Content-Type", "application/aton")
-            self.send_header("Content-Length", len(respbody))
-            self.end_headers()
-            self.wfile.write(respbody)
-
+            if os.path.isfile(filepath): self.send_response_redirect(f"/downloads/{filename}")
+            else: self.send_response_err(f"ERROR file [{filename}] not found", status=500)
 
         elif path.startswith("/audio/"):
 
@@ -203,8 +157,10 @@ class DSSHandler(http.server.BaseHTTPRequestHandler):
                 self.wfile.write(f"http://{self.headers.get('Host')}/downloads/{TAB}{TAB}<{fmtsize(ffsize)}>{TAB}<>{NL}".encode("utf-8"))
                 return
 
-            if filename.endswith(".m4a"): ctype = "audio/mp4"
+            if filename.endswith(".json"): ctype = "application/json"
+            elif filename.endswith(".m4a"): ctype = "audio/mp4"
             elif filename.endswith(".mp4"): ctype = "video/mp4"
+            elif filename.endswith(".jpeg"): ctype = "image/jpeg"
             else: return self.send_response_err(f"ERROR invalid file suffix", status=400)
 
             filepath = os.path.join(DownloadsDir, filename)
