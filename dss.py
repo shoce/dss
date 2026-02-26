@@ -37,7 +37,7 @@ class DSSHandler(http.server.BaseHTTPRequestHandler):
     def do_GET(self):
 
         path = urllib.parse.urlparse(self.path).path
-        perr(f"DEBUG GET path [{path}]")
+        perr(f"DEBUG GET [{path}]")
 
         if path.startswith(("/info/", "/audio/", "/video/", "/thumb/")):
 
