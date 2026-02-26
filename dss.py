@@ -1,10 +1,11 @@
 # python3 -m py_compile dss.py
 # TODO separate golang server for thumbs, downloads and cleaning
 # https://github.com/yt-dlp/yt-dlp
-import sys, os, string, time, http.server, urllib.parse
+import sys, os, string, time, http.server, urllib.parse, json
 sys.path.insert(0, "./vendor")
 import unidecode, yt_dlp
 
+SP = " "
 TAB = "\t"
 NL = "\n"
 TitleAllowedChars = set(string.ascii_letters + string.digits + ".")
@@ -38,9 +39,9 @@ class DSSHandler(http.server.BaseHTTPRequestHandler):
         path = urllib.parse.urlparse(self.path).path
         perr(f"DEBUG GET path [{path}]")
 
-        if path.startswith(("/audio/", "/video/", "/thumb/")):
+        if path.startswith(("/info/", "/audio/", "/video/", "/thumb/")):
 
-            vurl = path.removeprefix("/audio/").removeprefix("/video/").removeprefix("/thumb/")
+            vurl = path.removeprefix("/info/").removeprefix("/audio/").removeprefix("/video/").removeprefix("/thumb/")
             if not vurl: return self.send_response_err(f"ERROR video url missing", status=400)
             vurl = "https://" + vurl
             perr(f"DEBUG @vurl [{vurl}]")
@@ -51,6 +52,9 @@ class DSSHandler(http.server.BaseHTTPRequestHandler):
             vid = vinfo.get("id", "nil-id")
             vdate = vinfo.get("upload_date", "nil-date")
             perr(f"DEBUG @vid [{vid}] @vdate [{vdate}]")
+
+        if path.startswith(("/audio/", "/video/", "/thumb/")):
+
             filename = f"{vid}..{vdate}.."
             vtitle = vinfo.get("title", "nil-title").strip()
             vtitle = ".".join(vtitle.split()[:TitleWordsN])
@@ -66,7 +70,64 @@ class DSSHandler(http.server.BaseHTTPRequestHandler):
             if os.path.isfile(filepath): return self.send_response_redirect(f"/downloads/{filename}")
 
 
-        if path.startswith("/audio/"):
+        if path.startswith("/info/"):
+            perr(f"DEBUG GET /info/")
+            respbody = json.dumps(vinfo, indent=4, ensure_ascii=False) + NL
+            respbody = respbody.encode("utf-8")
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json")
+            self.send_header("Content-Length", len(respbody))
+            self.end_headers()
+            self.wfile.write(respbody)
+
+
+        elif path.startswith("/infoaton/"):
+            perr(f"DEBUG GET /info/")
+            vinfo2 = { k: vinfo.get(k) for k in (
+                "id", "title", "thumbnail", "description", "channel_id", "channel_url", "duration", "channel", "uploader", "upload_date", "timestamp", "fulltitle", "epoch", "height", "width", "ext", "vcodec", "acodec", "video_ext", "audio_ext", "resolution", "format", "format_id", "format_note"
+            ) }
+            respbody = ""
+            for k, v in vinfo2.items():
+                if isinstance(v, (str)):
+                    v = v.replace("]", "\\]").replace(NL, "\\n")
+                    respbody += f"@{k} [{v}]" + NL
+                if isinstance(v, (int, float, bool)):
+                    respbody += f"@{k} <{v}>" + NL
+                if isinstance(v, (list)):
+                    respbody += f"@{k} (" + SP
+                    for lv in v:
+                        if isinstance(lv, (str)):
+                            lv = lv.replace("]", "\\]").replace(NL, "\\n")
+                            respbody += f"[{lv}]" + SP
+                        if isinstance(lv, (int, float, bool)):
+                            respbody += f"<{lv}>" + SP
+                        if isinstance(lv, (list)):
+                            respbody += f"( )" + SP
+                        if isinstance(lv, (dict)):
+                            respbody += f"{{ }}" + SP
+                    respbody += ")" + NL
+                if isinstance(v, (dict)):
+                    respbody += f"@{k} {{" + SP
+                    for dk, dv in v.items():
+                        if isinstance(dv, (str)):
+                            dv = dv.replace("]", "\\]").replace(NL, "\\n")
+                            respbody += f"@{dk} [{dv}]" + SP
+                        if isinstance(dv, (int, float, bool)):
+                            respbody += f"@{dk} <{dv}>" + SP
+                        if isinstance(dv, (list)):
+                            respbody += f"@{dk} ( )" + SP
+                        if isinstance(dv, (dict)):
+                            respbody += f"@{dk} {{ }}" + SP
+                    respbody += f"}}" + NL
+            respbody = respbody.encode("utf-8")
+            self.send_response(200)
+            self.send_header("Content-Type", "application/aton")
+            self.send_header("Content-Length", len(respbody))
+            self.end_headers()
+            self.wfile.write(respbody)
+
+
+        elif path.startswith("/audio/"):
 
             ytdlopts = YtdlOpts | {
                 "format": "bestaudio[ext=m4a]",
@@ -137,9 +198,9 @@ class DSSHandler(http.server.BaseHTTPRequestHandler):
                 self.send_response(200)
                 self.send_header("Content-Type", "text/tab-separated-values")
                 self.end_headers()
-                self.wfile.write(f"@url{TAB}{TAB}@size{TAB}@mtime{NL}".encode())
-                for f in ff: self.wfile.write(f"http://{self.headers.get('Host')}/downloads/{f[0]}{TAB}{TAB}<{fmtsize(f[1])}>{TAB}<{fmttime(f[2])}>{NL}".encode())
-                self.wfile.write(f"http://{self.headers.get('Host')}/downloads/{TAB}{TAB}<{fmtsize(ffsize)}>{TAB}<>{NL}".encode())
+                self.wfile.write(f"@url{TAB}{TAB}@size{TAB}@mtime{NL}".encode("utf-8"))
+                for f in ff: self.wfile.write(f"http://{self.headers.get('Host')}/downloads/{f[0]}{TAB}{TAB}<{fmtsize(f[1])}>{TAB}<{fmttime(f[2])}>{NL}".encode("utf-8"))
+                self.wfile.write(f"http://{self.headers.get('Host')}/downloads/{TAB}{TAB}<{fmtsize(ffsize)}>{TAB}<>{NL}".encode("utf-8"))
                 return
 
             if filename.endswith(".m4a"): ctype = "audio/mp4"
@@ -176,7 +237,7 @@ class DSSHandler(http.server.BaseHTTPRequestHandler):
 
     def send_response_err(self, err, add_headers={}, status=400):
         perr(f"DEBUG send_response_err @status <{status}> @err [{err}]")
-        respbody = f"{err}{NL}".encode()
+        respbody = f"{err}{NL}".encode("utf-8")
         self.send_response(status)
         self.send_header("Content-Type", "text/plain")
         self.send_header("Content-Length", len(respbody))
