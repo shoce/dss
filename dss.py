@@ -1,7 +1,7 @@
 # python3 -m py_compile dss.py
 # TODO separate golang server for thumbs, downloads and cleaning
 # https://github.com/yt-dlp/yt-dlp
-import sys, os, string, time, http.server, urllib.parse, json
+import sys, os, string, time, http.server, urllib.parse, urllib.request, json
 sys.path.insert(0, "./vendor")
 import unidecode, yt_dlp
 
@@ -124,8 +124,19 @@ class DSSHandler(http.server.BaseHTTPRequestHandler):
                     vthumbwidth = vtw
             perr(f"DEBUG @vthumburl [{vthumburl}] @vthumbwidth <{vthumbwidth}>")
 
-            if vthumburl: self.send_response_redirect(vthumburl)
-            else: self.send_response_err(f"ERROR vthumburl empty", status=500)
+            if not vthumburl: self.send_response_err(f"ERROR vthumburl empty", status=500)
+
+            try:
+                with urllib.request.urlopen(vthumburl) as vthumbr, open(filepath, "wb") as filew:
+                    while True:
+                        chunk = vthumbr.read(128*1024)
+                        if not chunk:
+                            break
+                        filew.write(chunk)
+            except Exception as url_file_copy_err: return self.send_response_err(f"ERROR {url_file_copy_err}", status=500)
+
+            if os.path.isfile(filepath): self.send_response_redirect(f"/downloads/{filename}")
+            else: self.send_response_err(f"ERROR file [{filename}] not found", status=500)
 
         elif path.startswith("/downloads/"):
 
