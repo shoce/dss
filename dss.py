@@ -14,8 +14,8 @@ YtdlOpts = {
     "quiet": False,
     "js_runtimes": { "deno": { "path": "./deno" } },
 }
-YtVideoFormat = "bestvideo[vcodec^=avc1][height<=720]+bestaudio[ext=m4a]"
-YtAudioFormat = "bestaudio[ext=m4a]"
+YtVideoFormat = "bestvideo[vcodec^=avc1][height<=720]+bestaudio[acodec^=mp4a]"
+YtAudioFormat = "bestaudio[acodec^=mp4a]"
 
 def perr(msg): print(f"{msg}", file=sys.stderr, flush=True)
 def fmtsize(n): return f"{n:,}"
