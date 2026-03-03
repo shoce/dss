@@ -14,7 +14,7 @@ YtdlOpts = {
     "quiet": False,
     "js_runtimes": { "deno": { "path": "./deno" } },
 }
-YtVideoFormat = "bestvideo[vcodec^=avc1]"
+YtVideoFormat = "bestvideo[vcodec^=avc1][height<=720]"
 YtAudioFormat = "bestaudio[ext=m4a]"
 YtFormat = f"{YtVideoFormat}+{YtAudioFormat}"
 
