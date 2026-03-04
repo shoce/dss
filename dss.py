@@ -119,15 +119,18 @@ class DSSHandler(http.server.BaseHTTPRequestHandler):
         elif path.startswith("/thumb/"):
 
             vthumburl = ""
-            vthumbwidth = 0
+            vthumbheight = 0
             for vt in vinfo.get("thumbnails", []):
                 vtu = vt.get("url", "")
-                if not vtu.endswith(".jpg"): continue
-                vtw = vt.get("width", 0)
-                if vtw > vthumbwidth:
+                vtupath = urllib.parse.urlparse(vtu).path
+                vth = vt.get("height", 0)
+                vtpref = vt.get("preference", 0)
+                perr(f"DEBUG vinfo thumbnails @url [{vtu}] @height <{vth}> @preference <{vtpref}>")
+                if not vtupath.endswith(".jpg"): continue
+                if vth > vthumbheight:
                     vthumburl = vtu
-                    vthumbwidth = vtw
-            perr(f"DEBUG @vthumburl [{vthumburl}] @vthumbwidth <{vthumbwidth}>")
+                    vthumbheight = vth
+            perr(f"DEBUG @vthumburl [{vthumburl}] @vthumbheight <{vthumbheight}>")
 
             if not vthumburl: self.send_response_err(f"ERROR vthumburl empty", status=500)
 
