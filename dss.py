@@ -16,10 +16,14 @@ YtdlOpts = {
 }
 YtVideoFormat = "bestvideo[vcodec^=avc1][height<=720]+bestaudio[acodec^=mp4a]"
 YtAudioFormat = "bestaudio[acodec^=mp4a]"
+DownloadsDirDef = "downloads/"
+DownloadsDirMaxSizeDef = "4123123123"
+TimeFormatDef = '%Y:%m%d:%H%M%S'
+ReadBufferSize = 128 * 1024
 
 def perr(msg): print(f"{msg}", file=sys.stderr, flush=True)
 def fmtsize(n): return f"{n:,}"
-def fmttime(t): return time.strftime('%Y:%m%d:%H%M%S', time.localtime(t))
+def fmttime(t): return time.strftime(TimeFormatDef, time.localtime(t))
 def sanitize_filename(name):
     name2 = unidecode.unidecode(name)
     name2 = "".join(c if c in TitleAllowedChars else "." for c in name2)
@@ -27,9 +31,9 @@ def sanitize_filename(name):
     #perr(f"DEBUG sanitize_filename @name [{name2}]")
     return name2
 
-DownloadsDir = os.path.abspath(os.getenv("DownloadsDir", "downloads/"))
+DownloadsDir = os.path.abspath(os.getenv("DownloadsDir", DownloadsDirDef))
 os.makedirs(DownloadsDir, exist_ok=True)
-DownloadsDirMaxSize = int(os.getenv("DownloadsDirMaxSize", "4123123123"))
+DownloadsDirMaxSize = int(os.getenv("DownloadsDirMaxSize", DownloadsDirMaxSizeDef))
 perr(f"DEBUG @DownloadsDir [{DownloadsDir}] @DownloadsDirMaxSize <{fmtsize(DownloadsDirMaxSize)}>")
 
 class DSSHandler(http.server.BaseHTTPRequestHandler):
@@ -137,7 +141,7 @@ class DSSHandler(http.server.BaseHTTPRequestHandler):
             try:
                 with urllib.request.urlopen(vthumburl) as vthumbr, open(filepath, "wb") as filew:
                     while True:
-                        chunk = vthumbr.read(128*1024)
+                        chunk = vthumbr.read(ReadBufferSize)
                         if not chunk:
                             break
                         filew.write(chunk)
@@ -197,7 +201,7 @@ class DSSHandler(http.server.BaseHTTPRequestHandler):
                     self.send_header("Content-Length", clength)
                     self.end_headers()
                     while True:
-                        fchunk = f.read(128 * 1024)
+                        fchunk = f.read(ReadBufferSize)
                         if not fchunk: break
                         self.wfile.write(fchunk)
             except Exception as err: return self.send_response_err(f"ERROR serve file {err}", status=500)
