@@ -1,4 +1,3 @@
----
 
 apiVersion: "v1"
 kind: "Service"
@@ -12,8 +11,15 @@ metadata:
 spec:
   selector:
     app: "dss"
+  {{ if $.Values.NodePort -}}
+  type: "NodePort"
+  ports:
+    - port: 80
+      nodePort: {{ $.Values.NodePort }}
+  {{ else -}}
   type: "ClusterIP"
   ports:
     - port: 80
+  {{ end }}
 
 

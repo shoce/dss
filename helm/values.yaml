@@ -1,4 +1,3 @@
----
 
 DEBUG: false
 
@@ -11,4 +10,6 @@ HttpRouteEnable: false
 
 DownloadsDir: "downloads/"
 DownloadsDirMaxSize: "40123123123"
+
+NodePort: 0
 
