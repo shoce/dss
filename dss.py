@@ -175,7 +175,7 @@ class DSSHandler(http.server.BaseHTTPRequestHandler):
                 self.send_response(200)
                 self.send_header("Content-Type", "text/tab-separated-values")
                 self.end_headers()
-                self.wfile.write(f"@url{NL}{TAB}@size{TAB}@mtime{NL}".encode("utf-8"))
+                self.wfile.write(f"@URL{NL}{TAB}@SIZE{TAB}@MTIME{NL}".encode("utf-8"))
                 for f in ff: self.wfile.write(
                     f"http://{self.headers.get('Host')}/downloads/{f[0]}{NL}{TAB}<{fmtsize(f[1])}>{TAB}<{fmttime(f[2])}>{NL}"
                   .encode("utf-8"))
