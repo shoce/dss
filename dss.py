@@ -180,7 +180,7 @@ class DSSHandler(http.server.BaseHTTPRequestHandler):
                     f"http://{self.headers.get('Host')}/downloads/{f[0]}{NL}{TAB}<{fmtsize(f[1])}>{TAB}<{fmttime(f[2])}>{NL}"
                   .encode("utf-8"))
                 self.wfile.write(
-                    f"http://{self.headers.get('Host')}/downloads/{NL}{TAB}<{fmtsize(ffsize)}>{TAB}<>{NL}"
+                    f"http://{self.headers.get('Host')}/downloads/{NL}{TAB}<{fmtsize(ffsize)}>{NL}"
                     .encode("utf-8"))
                 return
 
