@@ -208,6 +208,7 @@ class DSSHandler(http.server.BaseHTTPRequestHandler):
                         fchunk = f.read(ReadBufferSize)
                         if not fchunk: break
                         self.wfile.write(fchunk)
+            except BrokenPipeError as err: perr(f"ERROR serve file {err}")
             except Exception as err: return self.send_response_err(f"ERROR serve file {err}", status=500)
 
         else: self.send_response_err(f"ERROR invalid path prefix", status=400)
