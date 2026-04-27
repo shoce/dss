@@ -94,7 +94,7 @@ class DSSHandler(http.server.BaseHTTPRequestHandler):
 
             ytdlopts = YtdlOpts | {
                 "format": YtAudioFormat,
-                "outtmpl": os.path.join(DownloadsDir, filename),
+                "outtmpl": filepath,
                 "postprocessors": [{
                     "key": "FFmpegExtractAudio",
                     "preferredcodec": "m4a",
@@ -111,7 +111,7 @@ class DSSHandler(http.server.BaseHTTPRequestHandler):
 
             ytdlopts = YtdlOpts | {
                 "format": YtVideoFormat,
-                "outtmpl": os.path.join(DownloadsDir, filename),
+                "outtmpl": filepath,
                 "merge_output_format": "mp4",
             }
             try: yt_dlp.YoutubeDL(ytdlopts).download([vurl])
