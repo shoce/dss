@@ -1,7 +1,7 @@
 # python3 -m py_compile dss.py
 # TODO separate golang server for thumbs, downloads and cleaning
 # https://github.com/yt-dlp/yt-dlp
-import sys, os, string, time, http.server, urllib.parse, urllib.request, json
+import sys, os, string, datetime, http.server, urllib.parse, urllib.request, json
 sys.path.insert(0, "./vendor")
 import unidecode, yt_dlp
 
@@ -18,23 +18,25 @@ YtVideoFormat = "bestvideo[vcodec^=avc1][height<=720]+bestaudio[acodec^=mp4a]"
 YtAudioFormat = "bestaudio[acodec^=mp4a]"
 DownloadsDirDef = "downloads/"
 DownloadsDirMaxSizeDef = "4123123123"
-TimeFormatDef = '%Y:%m%d:%H%M%S-'
+TimeFormatDef = "%Y:%m%d:%H%M%S"
 ReadBufferSize = 128 * 1024
 
 def perr(msg): print(f"{msg}", file=sys.stderr, flush=True)
 def fmtsize(n): return f"{n:,}"
-def fmttime(t): return time.strftime(TimeFormatDef, time.localtime(t))
+def fmttime(t):
+    lt = datetime.datetime.fromtimestamp(t).astimezone()
+    return lt.strftime(TimeFormatDef) + ("-" if lt.utcoffset().total_seconds() else "+")
 def sanitize_filename(name):
     name2 = unidecode.unidecode(name)
     name2 = "".join(c if c in TitleAllowedChars else "." for c in name2)
     name2 = ".".join(filter(None, name2.split("."))).strip(".")
-    #perr(f"DEBUG sanitize_filename @name [{name2}]")
+    #perr(f"DEBUG sanitize_filename name [{name2}]")
     return name2
 
 DownloadsDir = os.path.abspath(os.getenv("DownloadsDir", DownloadsDirDef))
 os.makedirs(DownloadsDir, exist_ok=True)
 DownloadsDirMaxSize = int(os.getenv("DownloadsDirMaxSize", DownloadsDirMaxSizeDef))
-perr(f"DEBUG @DownloadsDir [{DownloadsDir}] @DownloadsDirMaxSize <{fmtsize(DownloadsDirMaxSize)}>")
+perr(f"DEBUG DownloadsDir [{DownloadsDir}] DownloadsDirMaxSize <{fmtsize(DownloadsDirMaxSize)}>")
 
 class DSSHandler(http.server.BaseHTTPRequestHandler):
     server_version = "dss/1.0"
@@ -50,7 +52,7 @@ class DSSHandler(http.server.BaseHTTPRequestHandler):
             vurl = path.removeprefix("/info/").removeprefix("/audio/").removeprefix("/video/").removeprefix("/thumb/")
             if not vurl: return self.send_response_err(f"ERROR video url missing", status=400)
             vurl = "https://" + vurl
-            perr(f"DEBUG @vurl [{vurl}]")
+            perr(f"DEBUG vurl [{vurl}]")
 
             ytdlopts = YtdlOpts | {
                 "format": YtVideoFormat,
@@ -60,7 +62,7 @@ class DSSHandler(http.server.BaseHTTPRequestHandler):
 
             vid = vinfo.get("id", "nil-id")
             vdate = vinfo.get("upload_date", "nil-date")
-            perr(f"DEBUG @vid [{vid}] @vdate [{vdate}]")
+            perr(f"DEBUG vid [{vid}] vdate [{vdate}]")
 
             filename = f"{vid}..{vdate}.."
             vtitle = vinfo.get("title", "nil-title").strip()
@@ -74,7 +76,7 @@ class DSSHandler(http.server.BaseHTTPRequestHandler):
             elif path.startswith("/video/"): filename += "mp4"
             elif path.startswith("/thumb/"): filename += "jpeg"
             filepath = os.path.join(DownloadsDir, filename)
-            perr(f"DEBUG @filename [{filename}] @filepath [{filepath}]")
+            perr(f"DEBUG filename [{filename}] filepath [{filepath}]")
             if os.path.isfile(filepath): return self.send_response_redirect(f"/downloads/{filename}")
 
 
@@ -129,12 +131,12 @@ class DSSHandler(http.server.BaseHTTPRequestHandler):
                 vtupath = urllib.parse.urlparse(vtu).path
                 vth = vt.get("height", 0)
                 vtpref = vt.get("preference", 0)
-                perr(f"DEBUG vinfo thumbnails @url [{vtu}] @height <{vth}> @preference <{vtpref}>")
+                perr(f"DEBUG vinfo thumbnails url [{vtu}] height <{vth}> preference <{vtpref}>")
                 if not vtupath.endswith(".jpg"): continue
                 if vth > vthumbheight:
                     vthumburl = vtu
                     vthumbheight = vth
-            perr(f"DEBUG @vthumburl [{vthumburl}] @vthumbheight <{vthumbheight}>")
+            perr(f"DEBUG vthumburl [{vthumburl}] vthumbheight <{vthumbheight}>")
 
             if not vthumburl: self.send_response_err(f"ERROR vthumburl empty", status=500)
 
@@ -163,19 +165,19 @@ class DSSHandler(http.server.BaseHTTPRequestHandler):
                     ff.append((f.name, fstat.st_size, fstat.st_mtime))
                     ffsize += fstat.st_size
                 ff.sort(key=lambda x: x[2])
-                perr(f"DEBUG @DownloadsDir [{DownloadsDir}] @size <{fmtsize(ffsize)}> @DownloadsDirMaxSize <{fmtsize(DownloadsDirMaxSize)}>")
+                perr(f"DEBUG DownloadsDir [{DownloadsDir}] size <{fmtsize(ffsize)}> DownloadsDirMaxSize <{fmtsize(DownloadsDirMaxSize)}>")
                 if ffsize > DownloadsDirMaxSize:
                     for f in ff:
                         fpath = os.path.join(DownloadsDir, f[0])
-                        perr(f"DEBUG delete @path [{fpath}] @size <{fmtsize(f[1])}> @mtime <{fmttime(f[2])}>")
+                        perr(f"DEBUG delete path [{fpath}] size <{fmtsize(f[1])}> mtime <{fmttime(f[2])}>")
                         try: os.remove(fpath)
-                        except OSError as err: perr(f"ERROR delete @path [{fpath}] {err}")
+                        except OSError as err: perr(f"ERROR delete path [{fpath}] {err}")
                         ffsize -= f[1]
                         if ffsize < DownloadsDirMaxSize: break
                 self.send_response(200)
                 self.send_header("Content-Type", "text/tab-separated-values")
                 self.end_headers()
-                self.wfile.write(f"@URL{NL}{TAB}@SIZE{TAB}@MTIME{NL}".encode("utf-8"))
+                self.wfile.write(f"URL{NL}{TAB}SIZE{TAB}MTIME{NL}".encode("utf-8"))
                 for f in ff: self.wfile.write(
                     f"http://{self.headers.get('Host')}/downloads/{f[0]}{NL}{TAB}<{fmtsize(f[1])}>{TAB}<{fmttime(f[2])}>{NL}"
                   .encode("utf-8"))
@@ -220,7 +222,7 @@ class DSSHandler(http.server.BaseHTTPRequestHandler):
         self.end_headers()
 
     def send_response_err(self, err, add_headers={}, status=400):
-        perr(f"DEBUG send_response_err @status <{status}> @err [{err}]")
+        perr(f"DEBUG send_response_err status <{status}> err [{err}]")
         respbody = f"{err}{NL}".encode("utf-8")
         self.send_response(status)
         self.send_header("Content-Type", "text/plain")
