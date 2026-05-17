@@ -217,6 +217,7 @@ class DSSHandler(http.server.BaseHTTPRequestHandler):
 
 
     def send_response_redirect(self, location, status=302):
+        perr(f"DEBUG send_response_redirect status <{status}> location [{location}]")
         self.send_response(status)
         self.send_header("Location", location)
         self.end_headers()
@@ -237,14 +238,14 @@ class DSSHandler(http.server.BaseHTTPRequestHandler):
     def do_POST(self): self.send_response_err(f"GET method only", add_headers=dict(Allow="GET"), status=405)
 
 
-def main():
+
+if __name__ == "__main__":
     server = http.server.ThreadingHTTPServer(("", 80), DSSHandler)
-    perr(f"server listening on :80")
+    perr(f"http server listening on :80")
     try:
         server.serve_forever()
     except KeyboardInterrupt:
         perr(f"shutting down")
         server.shutdown()
 
-if __name__ == "__main__": main()
 
