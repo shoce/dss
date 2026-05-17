@@ -11,7 +11,7 @@ RUN pip install --target ./vendor --no-cache-dir -r requirements.txt
 RUN apt install -y --no-install-recommends curl
 RUN curl https://zyedidia.github.io/eget.sh | sh
 RUN mv eget /bin/eget
-RUN eget --asset=deno- denoland/deno
+RUN eget --asset="deno-" --asset ".zip" denoland/deno
 RUN ./deno --version
 
 RUN apt clean
