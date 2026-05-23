@@ -1,9 +1,11 @@
 # python3 -m py_compile dss.py
 # TODO separate golang server for thumbs, downloads and cleaning
 # https://github.com/yt-dlp/yt-dlp
-import sys, os, string, datetime, http.server, urllib.parse, urllib.request, json
+import sys, os, string, datetime, http.server, urllib.parse, urllib.request, json, io, gc, tracemalloc
 sys.path.insert(0, "./vendor")
 import unidecode, yt_dlp
+
+tracemalloc.start(111)
 
 SP = " "
 TAB = "\t"
@@ -212,6 +214,32 @@ class DSSHandler(http.server.BaseHTTPRequestHandler):
                         self.wfile.write(fchunk)
             except BrokenPipeError as err: perr(f"ERROR serve file {err}")
             except Exception as err: return self.send_response_err(f"ERROR serve file {err}", status=500)
+
+        elif path == "/mem/":
+            self.send_response(200)
+            self.send_header("Content-Type", "text/plain")
+            self.end_headers()
+            buf = io.StringIO()
+            current, peak = tracemalloc.get_traced_memory()
+            print(f"current <{current/1024:.1f}kb>", file=buf)
+            print(f"peak <{peak/1024:.1f}kb>", file=buf)
+            print("", file=buf)
+            snapshot = tracemalloc.take_snapshot()
+            print("top (", file=buf)
+            for stat in snapshot.statistics("lineno")[:22]:
+                print(stat, file=buf)
+            oo = list()
+            for o in gc.get_objects():
+                try:
+                    oo.append((sys.getsizeof(o), type(o).__name__, repr(o)[:66]))
+                except Exception:
+                    pass
+            oo.sort(reverse=True)
+            for size, typ, desc in oo[:22]:
+                print(f"<{size/1024:f}kb> [{typ:33s}] [{desc}]"+NL, file=buf)
+            print(")", file=buf)
+            self.wfile.write(buf.getvalue().encode("utf-8"))
+            return
 
         else: self.send_response_err(f"ERROR invalid path prefix", status=400)
 
