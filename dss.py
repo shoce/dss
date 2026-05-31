@@ -235,9 +235,9 @@ class DSSHandler(http.server.BaseHTTPRequestHandler):
                     size = sys.getsizeof(o)
                     if size < 99*1024:
                         continue
-                    self.wfile.write(f"{TAB}size<{int(size/1024):d}kb> type[{type(o).__name__}] name[{o.__name__[:33]}] {NL}".encode("utf-8"))
+                    self.wfile.write(f"{TAB}size<{int(size/1024):d}kb> type[{type(o).__name__}] repr[{repr(o)[:33]}] {NL}".encode("utf-8"))
                 except Exception as err:
-                    self.wfile.write(f"ERROR {err} {NL}".encode("utf-8"))
+                    self.wfile.write(f"{TAB}ERROR {err} {NL}".encode("utf-8"))
             self.wfile.write(f") {NL}".encode("utf-8"))
             self.wfile.write(f"{NL}".encode("utf-8"))
 
