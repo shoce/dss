@@ -225,7 +225,7 @@ class DSSHandler(http.server.BaseHTTPRequestHandler):
             self.wfile.write(f"peak <{int(peak/1024):d}kb> {NL}".encode("utf-8"))
             self.wfile.write(f"snapshot.statistics ( {NL}".encode("utf-8"))
             for s in tracemalloc.take_snapshot().statistics("lineno")[:22]:
-                if s.size < 99*1024:
+                if s.size*s.count < 99*1024:
                     continue
                 self.wfile.write(f"{TAB}size<{int(s.size/1024):d}kb> count<{s.count}> traceback[{s.traceback}] {NL}".encode("utf-8"))
             self.wfile.write(f") {NL}".encode("utf-8"))
