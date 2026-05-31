@@ -5,7 +5,7 @@ import sys, os, string, datetime, http.server, urllib.parse, urllib.request, jso
 sys.path.insert(0, "./vendor")
 import unidecode, yt_dlp
 
-tracemalloc.start(111)
+tracemalloc.start(11)
 
 SP = " "
 TAB = "\t"
@@ -215,19 +215,18 @@ class DSSHandler(http.server.BaseHTTPRequestHandler):
             except BrokenPipeError as err: perr(f"ERROR serve file {err}")
             except Exception as err: return self.send_response_err(f"ERROR serve file {err}", status=500)
 
+
         elif path == "/mem/":
             self.send_response(200)
             self.send_header("Content-Type", "text/plain")
             self.end_headers()
-            buf = io.StringIO()
             current, peak = tracemalloc.get_traced_memory()
-            print(f"current <{current/1024:.1f}kb>", file=buf)
-            print(f"peak <{peak/1024:.1f}kb>", file=buf)
-            print("", file=buf)
+            self.wfile.write(f"current <{current/1024:.1f}kb> {NL}".encode("utf-8"))
+            self.wfile.write(f"peak <{peak/1024:.1f}kb> {NL}".encode("utf-8"))
             snapshot = tracemalloc.take_snapshot()
-            print("top (", file=buf)
-            for stat in snapshot.statistics("lineno")[:22]:
-                print(stat, file=buf)
+            self.wfile.write("top ( {NL}".encode("utf-8"))
+            for s in snapshot.statistics("lineno")[:11]:
+                self.wfile.write(f"{s} {NL}".encode("utf-8"))
             oo = list()
             for o in gc.get_objects():
                 try:
@@ -235,11 +234,11 @@ class DSSHandler(http.server.BaseHTTPRequestHandler):
                 except Exception:
                     pass
             oo.sort(reverse=True)
-            for size, typ, desc in oo[:22]:
-                print(f"<{size/1024:f}kb> [{typ:33s}] [{desc}]"+NL, file=buf)
-            print(")", file=buf)
-            self.wfile.write(buf.getvalue().encode("utf-8"))
-            return
+            for size, typ, desc in oo[:11]:
+                self.wfile.write(f"<{size/1024:f}kb> [{typ:33s}] [{desc}] {NL}".encode("utf-8"))
+            self.wfile.write(") {NL}".encode("utf-8"))
+            self.wfile.write("{NL}".encode("utf-8"))
+
 
         else: self.send_response_err(f"ERROR invalid path prefix", status=400)
 
