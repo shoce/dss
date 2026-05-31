@@ -224,9 +224,11 @@ class DSSHandler(http.server.BaseHTTPRequestHandler):
             self.wfile.write(f"current <{current/1024:.1f}kb> {NL}".encode("utf-8"))
             self.wfile.write(f"peak <{peak/1024:.1f}kb> {NL}".encode("utf-8"))
             snapshot = tracemalloc.take_snapshot()
-            self.wfile.write("top ( {NL}".encode("utf-8"))
-            for s in snapshot.statistics("lineno")[:11]:
+            self.wfile.write(f"snapshot.statistics ( {NL}".encode("utf-8"))
+            for s in snapshot.statistics("lineno")[:22]:
                 self.wfile.write(f"{s} {NL}".encode("utf-8"))
+            self.wfile.write(f") {NL}".encode("utf-8"))
+            self.wfile.write(f"gc.get_objects ( {NL}".encode("utf-8"))
             oo = list()
             for o in gc.get_objects():
                 try:
@@ -234,10 +236,10 @@ class DSSHandler(http.server.BaseHTTPRequestHandler):
                 except Exception:
                     pass
             oo.sort(reverse=True)
-            for size, typ, desc in oo[:11]:
+            for size, typ, desc in oo[:22]:
                 self.wfile.write(f"<{size/1024:f}kb> [{typ:33s}] [{desc}] {NL}".encode("utf-8"))
-            self.wfile.write(") {NL}".encode("utf-8"))
-            self.wfile.write("{NL}".encode("utf-8"))
+            self.wfile.write(f") {NL}".encode("utf-8"))
+            self.wfile.write(f"{NL}".encode("utf-8"))
 
 
         else: self.send_response_err(f"ERROR invalid path prefix", status=400)
