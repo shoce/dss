@@ -223,21 +223,22 @@ class DSSHandler(http.server.BaseHTTPRequestHandler):
             current, peak = tracemalloc.get_traced_memory()
             self.wfile.write(f"current <{current/1024:.1f}kb> {NL}".encode("utf-8"))
             self.wfile.write(f"peak <{peak/1024:.1f}kb> {NL}".encode("utf-8"))
-            snapshot = tracemalloc.take_snapshot()
             self.wfile.write(f"snapshot.statistics ( {NL}".encode("utf-8"))
+            snapshot = tracemalloc.take_snapshot()
             for s in snapshot.statistics("lineno")[:22]:
                 self.wfile.write(f"{s} {NL}".encode("utf-8"))
             self.wfile.write(f") {NL}".encode("utf-8"))
             self.wfile.write(f"gc.get_objects ( {NL}".encode("utf-8"))
-            oo = list()
             for o in gc.get_objects():
                 try:
-                    oo.append((sys.getsizeof(o), type(o).__name__, repr(o)[:66]))
-                except Exception:
-                    pass
-            oo.sort(reverse=True)
-            for size, typ, desc in oo[:22]:
-                self.wfile.write(f"<{size/1024:f}kb> [{typ:33s}] [{desc}] {NL}".encode("utf-8"))
+                    size = sys.getsizeof(o)
+                    if size < 1*1024*1024:
+                        continue
+                    typ = type(o).__name__
+                    desc = repr(o)[:22]
+                    self.wfile.write(f"size<{size/1024:f}kb> typ[{typ:22s}] desc[{desc}] {NL}".encode("utf-8"))
+                except Exception as err:
+                    self.wfile.write(f"ERROR {err} {NL}".encode("utf-8"))
             self.wfile.write(f") {NL}".encode("utf-8"))
             self.wfile.write(f"{NL}".encode("utf-8"))
 
