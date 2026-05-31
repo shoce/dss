@@ -221,13 +221,13 @@ class DSSHandler(http.server.BaseHTTPRequestHandler):
             self.send_header("Content-Type", "text/plain")
             self.end_headers()
             current, peak = tracemalloc.get_traced_memory()
-            self.wfile.write(f"current <{current/1024:d}kb> {NL}".encode("utf-8"))
-            self.wfile.write(f"peak <{peak/1024:d}kb> {NL}".encode("utf-8"))
+            self.wfile.write(f"current <{int(current/1024):d}kb> {NL}".encode("utf-8"))
+            self.wfile.write(f"peak <{int(peak/1024):d}kb> {NL}".encode("utf-8"))
             self.wfile.write(f"snapshot.statistics ( {NL}".encode("utf-8"))
             for s in tracemalloc.take_snapshot().statistics("lineno")[:22]:
                 if s.size < 99*1024:
                     continue
-                self.wfile.write(f"{TAB}size<{s.size/1024:d}kb> count<{s.count}> traceback[{s.traceback}] {NL}".encode("utf-8"))
+                self.wfile.write(f"{TAB}size<{int(s.size/1024):d}kb> count<{s.count}> traceback[{s.traceback}] {NL}".encode("utf-8"))
             self.wfile.write(f") {NL}".encode("utf-8"))
             self.wfile.write(f"gc.get_objects ( {NL}".encode("utf-8"))
             for o in gc.get_objects():
@@ -235,7 +235,7 @@ class DSSHandler(http.server.BaseHTTPRequestHandler):
                     size = sys.getsizeof(o)
                     if size < 99*1024:
                         continue
-                    self.wfile.write(f"{TAB}size<{size/1024:d}kb> type[{type(o).__name__}] name[{o.__name__[:33]}] {NL}".encode("utf-8"))
+                    self.wfile.write(f"{TAB}size<{int(size/1024):d}kb> type[{type(o).__name__}] name[{o.__name__[:33]}] {NL}".encode("utf-8"))
                 except Exception as err:
                     self.wfile.write(f"ERROR {err} {NL}".encode("utf-8"))
             self.wfile.write(f") {NL}".encode("utf-8"))
