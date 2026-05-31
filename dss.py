@@ -221,7 +221,7 @@ class DSSHandler(http.server.BaseHTTPRequestHandler):
             self.send_header("Content-Type", "text/plain")
             self.end_headers()
             current, peak = tracemalloc.get_traced_memory()
-            self.wfile.write(f"current <{current/1024:.d}kb> {NL}".encode("utf-8"))
+            self.wfile.write(f"current <{current/1024:d}kb> {NL}".encode("utf-8"))
             self.wfile.write(f"peak <{peak/1024:d}kb> {NL}".encode("utf-8"))
             self.wfile.write(f"snapshot.statistics ( {NL}".encode("utf-8"))
             for s in tracemalloc.take_snapshot().statistics("lineno")[:22]:
