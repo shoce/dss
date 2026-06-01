@@ -24,11 +24,11 @@ TimeFormatDef = "%Y:%m%d:%H%M%S"
 ReadBufferSize = 128 * 1024
 
 def perr(msg): print(f"{msg}", file=sys.stderr, flush=True)
-def fmtsize(n): return f"{n:,}"
+def fmtsize(n:int): return f"{n:,}"
 def fmttime(t):
     lt = datetime.datetime.fromtimestamp(t).astimezone()
     return lt.strftime(TimeFormatDef) + ("-" if lt.utcoffset().total_seconds() else "+")
-def sanitize_filename(name):
+def sanitize_filename(name:str):
     name2 = unidecode.unidecode(name)
     name2 = "".join(c if c in TitleAllowedChars else "." for c in name2)
     name2 = ".".join(filter(None, name2.split("."))).strip(".")
@@ -220,13 +220,13 @@ class DSSHandler(http.server.BaseHTTPRequestHandler):
             self.send_header("Content-Type", "text/plain")
             self.end_headers()
             current, peak = tracemalloc.get_traced_memory()
-            self.wfile.write(f"current <{int(current/1024):d}kb> {NL}".encode("utf-8"))
-            self.wfile.write(f"peak <{int(peak/1024):d}kb> {NL}".encode("utf-8"))
+            self.wfile.write(f"current <{fmtsize(int(current/1024)):d}kb> {NL}".encode("utf-8"))
+            self.wfile.write(f"peak <{fmtsize(int(peak/1024)):d}kb> {NL}".encode("utf-8"))
             self.wfile.write(f"snapshot.statistics ( {NL}".encode("utf-8"))
             for s in tracemalloc.take_snapshot().statistics("lineno")[:22]:
                 if s.size*s.count < 99*1024:
                     continue
-                self.wfile.write(f"{TAB}total<{int(s.size*s.count/1024):d}kb> size<{int(s.size/1024):d}kb> count<{s.count}> traceback[{s.traceback}] {NL}".encode("utf-8"))
+                self.wfile.write(f"{TAB}total<{fmtsize(int(s.size*s.count/1024)):d}kb> size<{fmtsize(int(s.size/1024)):d}kb> count<{fmtsize(s.count)}> traceback[{s.traceback}] {NL}".encode("utf-8"))
             self.wfile.write(f") {NL}".encode("utf-8"))
             self.wfile.write(f"gc.get_objects ( {NL}".encode("utf-8"))
             for o in gc.get_objects():
@@ -234,7 +234,7 @@ class DSSHandler(http.server.BaseHTTPRequestHandler):
                     size = sys.getsizeof(o)
                     if size < 99*1024:
                         continue
-                    self.wfile.write(f"{TAB}size<{int(size/1024):d}kb> type[{type(o).__name__}] repr[{repr(o)[:99]}] {NL}".encode("utf-8"))
+                    self.wfile.write(f"{TAB}size<{fmtsize(int(size/1024)):d}kb> type[{type(o).__name__}] repr[{repr(o)[:99]}] {NL}".encode("utf-8"))
                 except Exception as err:
                     self.wfile.write(f"{TAB}ERROR {err} {NL}".encode("utf-8"))
             self.wfile.write(f") {NL}".encode("utf-8"))
