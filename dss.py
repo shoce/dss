@@ -164,18 +164,19 @@ class DSSHandler(http.server.BaseHTTPRequestHandler):
                 for f in os.scandir(DownloadsDir):
                     if not f.is_file(): continue
                     fstat = f.stat()
-                    ff.append((f.name, fstat.st_size, fstat.st_mtime))
+                    ff.append((f.name, fstat.st_size, fstat.st_mtime, fstat.st_atime))
                     ffsize += fstat.st_size
-                ff.sort(key=lambda x: x[2])
                 perr(f"DEBUG DownloadsDir [{DownloadsDir}] size <{fmtsize(ffsize)}> DownloadsDirMaxSize <{fmtsize(DownloadsDirMaxSize)}>")
                 if ffsize > DownloadsDirMaxSize:
+                    ff.sort(key=lambda x: x[3])
                     for f in ff:
                         fpath = os.path.join(DownloadsDir, f[0])
-                        perr(f"DEBUG delete path [{fpath}] size <{fmtsize(f[1])}> mtime <{fmttime(f[2])}>")
+                        perr(f"DEBUG delete path [{fpath}] size <{fmtsize(f[1])}> mtime <{fmttime(f[2])}> atime <{fmttime(f[3])}>")
                         try: os.remove(fpath)
                         except OSError as err: perr(f"ERROR delete path [{fpath}] {err}")
                         ffsize -= f[1]
                         if ffsize < DownloadsDirMaxSize: break
+                ff.sort(key=lambda x: x[2])
                 self.send_response(200)
                 self.send_header("Content-Type", "text/tab-separated-values")
                 self.end_headers()
