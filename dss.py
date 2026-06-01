@@ -24,7 +24,7 @@ TimeFormatDef = "%Y:%m%d:%H%M%S"
 ReadBufferSize = 128 * 1024
 
 def perr(msg): print(f"{msg}", file=sys.stderr, flush=True)
-def fmtsize(n:int): return f"{n:,}"
+def fmtsize(n:int): return f"{n:,},"
 def fmttime(t):
     lt = datetime.datetime.fromtimestamp(t).astimezone()
     return lt.strftime(TimeFormatDef) + ("-" if lt.utcoffset().total_seconds() else "+")
