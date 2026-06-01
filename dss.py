@@ -215,7 +215,6 @@ class DSSHandler(http.server.BaseHTTPRequestHandler):
             except BrokenPipeError as err: perr(f"ERROR serve file {err}")
             except Exception as err: return self.send_response_err(f"ERROR serve file {err}", status=500)
 
-
         elif path == "/mem/":
             self.send_response(200)
             self.send_header("Content-Type", "text/plain")
@@ -240,7 +239,6 @@ class DSSHandler(http.server.BaseHTTPRequestHandler):
                     self.wfile.write(f"{TAB}ERROR {err} {NL}".encode("utf-8"))
             self.wfile.write(f") {NL}".encode("utf-8"))
             self.wfile.write(f"{NL}".encode("utf-8"))
-
 
         else: self.send_response_err(f"ERROR invalid path prefix", status=400)
 
