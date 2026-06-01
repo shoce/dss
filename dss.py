@@ -227,7 +227,7 @@ class DSSHandler(http.server.BaseHTTPRequestHandler):
             for s in tracemalloc.take_snapshot().statistics("lineno")[:22]:
                 if s.size*s.count < 99*1024:
                     continue
-                self.wfile.write(f"{TAB}size<{int(s.size/1024):d}kb> count<{s.count}> traceback[{s.traceback}] {NL}".encode("utf-8"))
+                self.wfile.write(f"{TAB}total<{int(s.size*s.count/1024):d}kb> size<{int(s.size/1024):d}kb> count<{s.count}> traceback[{s.traceback}] {NL}".encode("utf-8"))
             self.wfile.write(f") {NL}".encode("utf-8"))
             self.wfile.write(f"gc.get_objects ( {NL}".encode("utf-8"))
             for o in gc.get_objects():
@@ -274,7 +274,7 @@ if __name__ == "__main__":
     try:
         server.serve_forever()
     except KeyboardInterrupt:
-        perr(f"shutting down")
+        perr(f"keyboard interrupt; shutting down")
         server.shutdown()
 
 
