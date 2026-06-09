@@ -1,6 +1,7 @@
 # python3 -m py_compile dss.py
 # TODO separate golang server for thumbs, downloads and cleaning
 # https://github.com/yt-dlp/yt-dlp
+# TODO download progress reporting https://www.mintlify.wiki/yt-dlp/yt-dlp/api/youtubedl-class#add_progress_hook 
 import sys, os, string, datetime, http.server, urllib.parse, urllib.request, json, io, gc, tracemalloc
 sys.path.insert(0, "./vendor")
 import unidecode, yt_dlp
@@ -50,9 +51,10 @@ class DSSHandler(http.server.BaseHTTPRequestHandler):
         path = urllib.parse.urlparse(self.path).path
         perr(f"DEBUG GET [{path}]")
 
-        if path.startswith(("/info/", "/audio/", "/video/", "/videomax/", "/thumb/")):
+        fpaths = ("/info/", "/audio/", "/video/", "/videomax/", "/thumb/")
+        if path.startswith(fpaths):
 
-            vurl = path.removeprefix("/info/").removeprefix("/audio/").removeprefix("/video/").removeprefix("/videomax/").removeprefix("/thumb/")
+            for p in fpaths: vurl = path.removeprefix(p)
             if not vurl: return self.send_response_err(f"ERROR video url missing", status=400)
             vurl = "https://" + vurl
             perr(f"DEBUG vurl [{vurl}]")
