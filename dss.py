@@ -16,7 +16,8 @@ YtdlOpts = {
     "quiet": False,
     "js_runtimes": { "deno": { "path": "./deno" } },
 }
-YtVideoFormat = "bestvideo[vcodec^=avc1][height<=720]+bestaudio[acodec^=mp4a]"
+YtVideoFormat = "bestvideo[vcodec^=avc1][height<=800]+bestaudio[acodec^=mp4a]"
+YtVideoMaxFormat = "bestvideo[vcodec^=avc1][height<=1600]+bestaudio[acodec^=mp4a]"
 YtAudioFormat = "bestaudio[acodec^=mp4a]"
 DownloadsDirDef = "downloads/"
 DownloadsDirMaxSizeDef = "4123123123"
@@ -49,9 +50,9 @@ class DSSHandler(http.server.BaseHTTPRequestHandler):
         path = urllib.parse.urlparse(self.path).path
         perr(f"DEBUG GET [{path}]")
 
-        if path.startswith(("/info/", "/audio/", "/video/", "/thumb/")):
+        if path.startswith(("/info/", "/audio/", "/video/", "/videomax/", "/thumb/")):
 
-            vurl = path.removeprefix("/info/").removeprefix("/audio/").removeprefix("/video/").removeprefix("/thumb/")
+            vurl = path.removeprefix("/info/").removeprefix("/audio/").removeprefix("/video/").removeprefix("/videomax/").removeprefix("/thumb/")
             if not vurl: return self.send_response_err(f"ERROR video url missing", status=400)
             vurl = "https://" + vurl
             perr(f"DEBUG vurl [{vurl}]")
@@ -76,7 +77,9 @@ class DSSHandler(http.server.BaseHTTPRequestHandler):
             if path.startswith("/info/"): filename += "json"
             elif path.startswith("/audio/"): filename += "m4a"
             elif path.startswith("/video/"): filename += "mp4"
+            elif path.startswith("/videomax/"): filename += "mp4"
             elif path.startswith("/thumb/"): filename += "jpeg"
+            
             filepath = os.path.join(DownloadsDir, filename)
             perr(f"DEBUG filename [{filename}] filepath [{filepath}]")
             if os.path.isfile(filepath): return self.send_response_redirect(f"/downloads/{filename}")
@@ -115,6 +118,19 @@ class DSSHandler(http.server.BaseHTTPRequestHandler):
 
             ytdlopts = YtdlOpts | {
                 "format": YtVideoFormat,
+                "outtmpl": filepath,
+                "merge_output_format": "mp4",
+            }
+            try: yt_dlp.YoutubeDL(ytdlopts).download([vurl])
+            except Exception as download_err: return self.send_response_err(f"ERROR {download_err}", status=500)
+
+            if os.path.isfile(filepath): self.send_response_redirect(f"/downloads/{filename}")
+            else: self.send_response_err(f"ERROR file [{filename}] not found", status=500)
+
+        elif path.startswith("/videomax/"):
+
+            ytdlopts = YtdlOpts | {
+                "format": YtVideoMaxFormat,
                 "outtmpl": filepath,
                 "merge_output_format": "mp4",
             }
