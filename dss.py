@@ -233,6 +233,7 @@ class DSSHandler(http.server.BaseHTTPRequestHandler):
                         if not fchunk: break
                         self.wfile.write(fchunk)
             except BrokenPipeError as err: perr(f"ERROR serve file {err}")
+            except ConnectionResetError as err: perr(f"ERROR serve file {err}")
             except Exception as err: return self.send_response_err(f"ERROR serve file {err}", status=500)
 
         elif path == "/mem/":
