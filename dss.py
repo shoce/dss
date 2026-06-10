@@ -79,7 +79,7 @@ class DSSHandler(http.server.BaseHTTPRequestHandler):
             if path.startswith("/info/"): filename += "json"
             elif path.startswith("/audio/"): filename += "m4a"
             elif path.startswith("/video/"): filename += "mp4"
-            elif path.startswith("/videomax/"): filename += "mp4"
+            elif path.startswith("/videomax/"): filename += "max.mp4"
             elif path.startswith("/thumb/"): filename += "jpeg"
             
             filepath = os.path.join(DownloadsDir, filename)
