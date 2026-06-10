@@ -54,7 +54,8 @@ class DSSHandler(http.server.BaseHTTPRequestHandler):
         fpaths = ("/info/", "/audio/", "/video/", "/videomax/", "/thumb/")
         if path.startswith(fpaths):
 
-            for p in fpaths: vurl = path.removeprefix(p)
+            vurl = path
+            for p in fpaths: vurl = vurl.removeprefix(p)
             if not vurl: return self.send_response_err(f"ERROR video url missing", status=400)
             vurl = "https://" + vurl
             perr(f"DEBUG vurl [{vurl}]")
