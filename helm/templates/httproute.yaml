@@ -6,7 +6,7 @@ kind: "HTTPRoute"
 
 metadata:
   name: "dss"
-  namespace: "{{ $.Release.Namespace }}"
+  namespace: "{{$.Release.Namespace}}"
 
 spec:
 
@@ -22,5 +22,5 @@ spec:
     - name: "dss"
       port: 80
 
-{{ end }}
+{{end}}
 

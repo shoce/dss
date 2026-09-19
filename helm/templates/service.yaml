@@ -4,7 +4,7 @@ kind: "Service"
 
 metadata:
   name: "dss"
-  namespace: "{{ $.Release.Namespace }}"
+  namespace: "{{$.Release.Namespace}}"
   labels:
     app: "dss"
 
@@ -15,11 +15,11 @@ spec:
   type: "NodePort"
   ports:
     - port: 80
-      nodePort: {{ $.Values.NodePort }}
+      nodePort: {{$.Values.NodePort}}
   {{ else -}}
   type: "ClusterIP"
   ports:
     - port: 80
-  {{ end }}
+  {{end}}
 
 

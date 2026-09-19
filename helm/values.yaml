@@ -5,11 +5,11 @@ ImageNameAnonDss: "ghcr.io/shoce/dss"
 ImageTagAnonDss: ""
 
 HostPath: "/opt/dss/"
-
-HttpRouteEnable: false
-
-DownloadsDir: "downloads/"
-DownloadsDirMaxSize: "40123123123"
+MountPath: "/dss/downloads/"
+DownloadsDir: "/dss/downloads/"
+DownloadsDirMaxSize: "123123123123"
 
 NodePort: 0
+HttpRouteEnable: false
+
 

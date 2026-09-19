@@ -4,7 +4,7 @@ kind: "StatefulSet"
 
 metadata:
   name: "dss"
-  namespace: "{{ $.Release.Namespace }}"
+  namespace: "{{$.Release.Namespace}}"
   labels:
     app: "dss"
 
@@ -15,7 +15,7 @@ spec:
   template:
     metadata:
       annotations:
-        image: "{{ $.Values.ImageNameAnonDss }}:{{ $.Values.ImageTagAnonDss }}"
+        image: "{{$.Values.ImageNameAnonDss}}:{{$.Values.ImageTagAnonDss}}"
       name: "dss"
       labels:
         app: "dss"
@@ -25,23 +25,23 @@ spec:
       volumes:
         - name: "dss"
           hostPath:
-            path: "{{ $.Values.HostPath }}"
-            type: "Directory"
+            path: "{{$.Values.HostPath}}"
+            type: "DirectoryOrCreate"
 
       containers:
 
         - name: "dss"
-          image: "{{ $.Values.ImageNameAnonDss }}:{{ $.Values.ImageTagAnonDss }}"
+          image: "{{$.Values.ImageNameAnonDss}}:{{$.Values.ImageTagAnonDss}}"
           imagePullPolicy: "IfNotPresent"
           ports:
             - containerPort: 80
           volumeMounts:
             - name: "dss"
-              mountPath: "/dss/downloads/"
+              mountPath: "{{$.Values.MountPath}}"
           env:
             - name: "DownloadsDir"
-              value: "{{ $.Values.DownloadsDir }}"
+              value: "{{$.Values.DownloadsDir}}"
             - name: "DownloadsDirMaxSize"
-              value: "{{ $.Values.DownloadsDirMaxSize }}"
+              value: "{{$.Values.DownloadsDirMaxSize}}"
 
 

@@ -21,7 +21,7 @@ YtVideoFormat = "bestvideo[vcodec^=avc1][height<=800]+bestaudio[acodec^=mp4a]"
 YtVideoMaxFormat = "bestvideo[vcodec^=avc1][height<=1600]+bestaudio[acodec^=mp4a]"
 YtAudioFormat = "bestaudio[acodec^=mp4a]"
 DownloadsDirDef = "downloads/"
-DownloadsDirMaxSizeDef = "4123123123"
+DownloadsDirMaxSizeDef = "12323123123"
 TimeFormatDef = ":%Y:%m%d:%H%M:%S"
 ReadBufferSize = 128 * 1024
 
