@@ -1,8 +1,8 @@
 
 DEBUG: false
 
-ImageNameGithubDss: "ghcr.io/shoce/dss"
-ImageTagGithubDss: ""
+ImageNameAnonDss: "ghcr.io/shoce/dss"
+ImageTagAnonDss: ""
 
 HostPath: "/opt/dss/"
 

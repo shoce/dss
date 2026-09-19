@@ -14,6 +14,8 @@ spec:
       app: "dss"
   template:
     metadata:
+      annotations:
+        image: "{{ $.Values.ImageNameAnonDss }}:{{ $.Values.ImageTagAnonDss }}"
       name: "dss"
       labels:
         app: "dss"
@@ -29,7 +31,7 @@ spec:
       containers:
 
         - name: "dss"
-          image: "{{ $.Values.ImageNameGithubDss }}:{{ $.Values.ImageTagGithubDss }}"
+          image: "{{ $.Values.ImageNameAnonDss }}:{{ $.Values.ImageTagAnonDss }}"
           imagePullPolicy: "IfNotPresent"
           ports:
             - containerPort: 80

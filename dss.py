@@ -22,7 +22,7 @@ YtVideoMaxFormat = "bestvideo[vcodec^=avc1][height<=1600]+bestaudio[acodec^=mp4a
 YtAudioFormat = "bestaudio[acodec^=mp4a]"
 DownloadsDirDef = "downloads/"
 DownloadsDirMaxSizeDef = "4123123123"
-TimeFormatDef = "%Y:%m%d:%H%M%S"
+TimeFormatDef = ":%Y:%m%d:%H%M:%S"
 ReadBufferSize = 128 * 1024
 
 def perr(msg): print(f"{msg}", file=sys.stderr, flush=True)
