@@ -21,7 +21,8 @@ YtVideoFormat = "bestvideo[vcodec^=avc1][height<=800]+bestaudio[acodec^=mp4a]"
 YtVideoMaxFormat = "bestvideo[vcodec^=avc1][height<=1600]+bestaudio[acodec^=mp4a]"
 YtAudioFormat = "bestaudio[acodec^=mp4a]"
 DownloadsDirDef = "downloads/"
-DownloadsDirMaxSizeDef = "12323123123"
+DownloadsDirCleanEnabled = False
+DownloadsDirMaxSizeDef = -1
 TimeFormatDef = ":%Y:%m%d:%H%M:%S"
 ReadBufferSize = 128 * 1024
 
@@ -39,8 +40,10 @@ def sanitize_filename(name:str):
 
 DownloadsDir = os.path.abspath(os.getenv("DownloadsDir", DownloadsDirDef))
 os.makedirs(DownloadsDir, exist_ok=True)
-DownloadsDirMaxSize = int(os.getenv("DownloadsDirMaxSize", DownloadsDirMaxSizeDef))
-perr(f"DEBUG DownloadsDir [{DownloadsDir}] DownloadsDirMaxSize <{fmtsize(DownloadsDirMaxSize)}>")
+if os.getenv("DownloadsDirCleanEnabled"): DownloadsDirCleanEnabled = True
+try: DownloadsDirMaxSize = int(os.getenv("DownloadsDirMaxSize"))
+except: DownloadsDirMaxSize = DownloadsDirMaxSizeDef
+perr(f"DEBUG DownloadsDir [{DownloadsDir}] DownloadsDirCleanEnabled <{DownloadsDirCleanEnabled}> DownloadsDirMaxSize <{fmtsize(DownloadsDirMaxSize)}>")
 
 class DSSHandler(http.server.BaseHTTPRequestHandler):
     server_version = "dss/1.0"
@@ -185,14 +188,15 @@ class DSSHandler(http.server.BaseHTTPRequestHandler):
                     fstat = f.stat()
                     ff.append((f.name, fstat.st_size, fstat.st_mtime, fstat.st_atime))
                     ffsize += fstat.st_size
-                perr(f"DEBUG DownloadsDir [{DownloadsDir}] size <{fmtsize(ffsize)}> DownloadsDirMaxSize <{fmtsize(DownloadsDirMaxSize)}>")
-                if ffsize > DownloadsDirMaxSize:
+                perr(f"DEBUG DownloadsDir [{DownloadsDir}] size <{fmtsize(ffsize)}> DownloadsDirCleanEnabled <{DownloadsDirCleanEnabled}> DownloadsDirMaxSize <{fmtsize(DownloadsDirMaxSize)}>")
+                if DownloadsDirCleanEnabled and DownloadsDirMaxSize>0 and ffsize>DownloadsDirMaxSize:
                     ff.sort(key=lambda x: x[3])
                     for f in ff:
                         fpath = os.path.join(DownloadsDir, f[0])
                         perr(f"DEBUG delete path [{fpath}] size <{fmtsize(f[1])}> mtime <{fmttime(f[2])}> atime <{fmttime(f[3])}>")
-                        try: os.remove(fpath)
-                        except OSError as err: perr(f"ERROR delete path [{fpath}] {err}")
+                        if DownloadsDirCleanEnabled:
+                            try: os.remove(fpath)
+                            except OSError as err: perr(f"ERROR delete path [{fpath}] {err}")
                         ffsize -= f[1]
                         if ffsize < DownloadsDirMaxSize: break
                 ff.sort(key=lambda x: x[2])
