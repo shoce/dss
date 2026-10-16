@@ -92,7 +92,8 @@ class DSSHandler(http.server.BaseHTTPRequestHandler):
 
 
         if path.startswith("/info/"):
-
+            
+            vinfo["formats"][0]["fragments"] = list( vinfo["formats"][0]["fragments"] )
             respbody = json.dumps(vinfo, indent=TAB, ensure_ascii=False) + NL
             respbody = respbody.encode("utf-8")
             try:
