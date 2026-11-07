@@ -12,7 +12,7 @@ SP = " "
 TAB = "\t"
 NL = "\n"
 TitleAllowedChars = set(string.ascii_letters + string.digits + ".")
-TitleWordsN = 6
+TitleWordsN = 11
 YtdlOpts = {
     "quiet": False,
     "js_runtimes": { "deno": { "path": "./deno" } },
